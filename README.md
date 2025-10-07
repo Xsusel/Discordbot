@@ -8,6 +8,7 @@ This project provides a Discord bot with a web dashboard that can be easily depl
 -   **Voice Activity Tracking**: Records the time users spend in voice channels.
 -   **Daily Member Count**: Tracks the server's member count daily.
 -   **Web Dashboard**: A web page to visualize server statistics, including a member count graph and a leaderboard of the most active users.
+-   **Music Playback**: Play music from YouTube by providing a URL or search query.
 -   **Dockerized**: Runs both the bot and the web server in a single container.
 
 ## Prerequisites
@@ -34,10 +35,12 @@ Before you can run the project, you need to create a Discord bot application and
 ### 3. Invite the Bot to Your Server
 1.  In the menu on the left, go to the **"OAuth2"** tab and then click on **"URL Generator"**.
 2.  In the **"SCOPES"** section, check the `bot` box.
-3.  A new **"BOT PERMISSIONS"** section will appear below. Check the following permissions:
+3.  A new **"BOT PERMISSIONS"** section will appear below. Check the following permissions, which are required for statistics and music playback:
     -   `Send Messages`
     -   `Read Message History`
     -   `Embed Links`
+    -   `Connect` (to join voice channels)
+    -   `Speak` (to play audio)
 4.  Scroll down and copy the **generated URL**.
 5.  Paste the URL into your browser, select the server you want to add the bot to, and click **"Authorize"**.
 
@@ -81,6 +84,16 @@ docker build -t discord-bot . && docker run --env-file bot.env -d -p 8080:8080 -
 
 -   `$dashboard`: The bot will reply with a link to the web dashboard for the current server.
 
+## Music Commands
+
+-   `$play <youtube_url_or_search>`: Plays a song from a YouTube URL or search query. If a song is already playing, it adds the new song to the queue.
+-   `$pause`: Pauses the currently playing song.
+-   `$resume`: Resumes a paused song.
+-   `$skip`: Skips the current song and plays the next one in the queue.
+-   `$stop`: Stops the music and clears the queue.
+-   `$queue`: Displays the current list of songs in the queue.
+-   `$leave`: Disconnects the bot from the voice channel.
+
 ## Web Dashboard
 
 Once the container is running, you can access the web dashboard for any server the bot is in.
@@ -91,6 +104,37 @@ Once the container is running, you can access the web dashboard for any server t
 The dashboard displays:
 -   A graph of the server's member count over time.
 -   A leaderboard of the top 10 most active users based on a combined score of messages and voice activity.
+
+## Troubleshooting
+
+If you encounter issues, here are some steps to diagnose the problem.
+
+### The Bot is Offline
+If the bot is not coming online on Discord, the first step is to check its logs for errors.
+
+1.  **Check the container logs:**
+    ```bash
+    sudo docker logs my-discord-bot
+    ```
+2.  Look for any tracebacks or error messages. Common issues include an invalid token (`LoginFailure`) or missing privileged intents. Follow the setup steps carefully to resolve these.
+
+### The Web Dashboard is Not Loading
+If the bot is online but you can't access the web dashboard, the issue is likely with the web server or your server's network configuration.
+
+1.  **Check the container logs:**
+    Run `sudo docker logs my-discord-bot` again. Look for any errors that occurred after the bot connected successfully. The error log we added will print any problems encountered while trying to render the page.
+
+2.  **Check if the port is exposed:**
+    Make sure you included the `-p 8080:8080` flag in your `docker run` command.
+
+3.  **Check your server's firewall:**
+    Many cloud providers (like AWS, Google Cloud, Azure) and VPS hosts have a network firewall that blocks all ports by default. You need to create a rule to allow incoming traffic on TCP port `8080`.
+
+    If you are using `ufw` (Uncomplicated Firewall) on your server, you can open the port with this command:
+    ```bash
+    sudo ufw allow 8080/tcp
+    ```
+    After running this, you may need to reload `ufw` or your server for the changes to take effect.
 
 ## Stopping the Bot
 
