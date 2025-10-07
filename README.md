@@ -145,6 +145,30 @@ If the bot is online but you can't access the web dashboard, the issue is likely
     ```
     After running this, you may need to reload `ufw` or your server for the changes to take effect.
 
+### Music Fails with "Sign in to confirm you're not a bot"
+This error occurs because YouTube is detecting that the request is coming from a server (your VPS) and is blocking it to prevent abuse. To fix this, you need to provide the bot with your YouTube browser cookies to authenticate the request.
+
+1.  **Install a Cookie Exporter Extension:**
+    -   Install a browser extension that can export cookies in the required `Netscape` format. A recommended one is **"Get cookies.txt LOCALLY"**, available for both [Chrome](https://chrome.google.com/webstore/detail/get-cookiestxt-locally/cclelhbbjliilanpilogKdkleogackad) and [Firefox](https://addons.mozilla.org/en-US/firefox/addon/get-cookies-txt-locally/).
+
+2.  **Export Your YouTube Cookies:**
+    -   Go to `https://www.youtube.com` in your browser and make sure you are logged in to your Google account.
+    -   Click the cookie exporter extension's icon in your browser's toolbar.
+    -   Click the **"Export"** or **"Save"** button to download the cookies file.
+
+3.  **Add the Cookie File to Your Project:**
+    -   Rename the downloaded file to exactly `cookies.txt`.
+    -   Place this `cookies.txt` file in the root directory of your project (the same directory as the `Dockerfile`).
+
+4.  **Rebuild the Docker Image:**
+    -   For the bot to access the new file, you **must** rebuild your Docker image. The existing `docker run` command will not see the new file.
+    -   Stop and remove the old container first, then rebuild and run:
+        ```bash
+        sudo docker stop my-discord-bot && sudo docker rm my-discord-bot
+        sudo docker build -t discord-bot . && sudo docker run --env-file bot.env -d -p 8080:8080 --name my-discord-bot discord-bot
+        ```
+    -   This will copy the `cookies.txt` file into the new image, and the bot will automatically start using it.
+
 ## Stopping the Bot
 
 To stop and remove the container, run:

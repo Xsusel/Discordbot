@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import io
 import base64
 from datetime import datetime
-import asyncio
 
 app = Flask(__name__)
 
@@ -79,19 +78,16 @@ def dashboard(guild_id):
         top_users_data = database.get_top_active_users(guild_id)
         top_users = []
         for user_row in top_users_data:
-            try:
-                # Safely run the async fetch_member in the bot's event loop from this thread
-                future = asyncio.run_coroutine_threadsafe(guild.fetch_member(user_row['user_id']), bot_client.loop)
-                member = future.result(timeout=5)  # Add a timeout for safety
+            # Use the synchronous, cache-based get_member() to avoid network calls from the web thread.
+            # This is stable and avoids the RuntimeError.
+            member = guild.get_member(user_row['user_id'])
+
+            if member:
                 display_name = member.display_name
                 avatar_url = member.avatar.url if member.avatar else "https://cdn.discordapp.com/embed/avatars/0.png"
-            except discord.NotFound:
+            else:
+                # Fallback if the member is not in the cache (e.g., they left the server)
                 display_name = f"Unknown User (ID: {user_row['user_id']})"
-                avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
-            except Exception as e:
-                # Handle other potential errors like timeouts or the user leaving the server
-                print(f"Could not fetch member {user_row['user_id']}: {e}")
-                display_name = f"User (ID: {user_row['user_id']})"
                 avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
 
             top_users.append({
