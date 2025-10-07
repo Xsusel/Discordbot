@@ -36,9 +36,17 @@ docker build -t discord-bot . && docker run --env-file .env -d --name my-discord
 
 ## Usage
 
-Once the bot is running and has been invited to your Discord server, you can use the following command:
+Once the bot is running and has been invited to your Discord server, you can use the following commands:
 
 -   `$ping`: The bot will reply with `Pong!`.
+
+-   `$stats <type> [period]`: Displays leaderboards for user activity.
+    -   **type**: `messages` or `voice`.
+    -   **period** (optional): `daily`, `weekly`, `monthly`, or `all` (default).
+
+    **Examples:**
+    -   `$stats messages weekly`: Shows the top message senders for the last 7 days.
+    -   `$stats voice all`: Shows the all-time leaderboard for time spent in voice channels.
 
 ## Stopping the Bot
 
