@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment
+.env
+venv/
+*.egg-info/
+
+# Minecraft Launcher specific
+.minecraft-launcher/
+installed_modpack.json
+
+# PyInstaller
+build/
+dist/
+*.spec
