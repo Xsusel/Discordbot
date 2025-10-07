@@ -77,16 +77,22 @@ async def on_message(message):
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-    """Tracks voice session durations for statistics."""
+    """Tracks voice session durations and logs individual join/leave events."""
     user_id = member.id
     guild_id = member.guild.id
-    if after.channel and not before.channel:
+
+    # A user joins a voice channel
+    if not before.channel and after.channel:
         voice_sessions[user_id] = datetime.utcnow()
-    elif not after.channel and before.channel:
+        database.log_voice_event(user_id, guild_id, after.channel.name, 'join')
+
+    # A user leaves a voice channel
+    elif before.channel and not after.channel:
         if user_id in voice_sessions:
             join_time = voice_sessions.pop(user_id)
             leave_time = datetime.utcnow()
             database.log_voice_session(user_id, guild_id, join_time, leave_time)
+        database.log_voice_event(user_id, guild_id, before.channel.name, 'leave')
 
 # --- General Bot Commands ---
 @bot.command(name='ping', help='Checks if the bot is responsive.')
@@ -149,6 +155,44 @@ async def stats(ctx, stat_type: str, period: str = 'all'):
             embed.description = "\n".join(leaderboard)
 
     await ctx.send(embed=embed)
+
+@bot.command(name='voicelogs', help='Shows voice channel join/leave logs from the last 24 hours.')
+async def voicelogs(ctx):
+    """Displays the voice channel join/leave logs for the last 24 hours."""
+    if not ctx.guild:
+        await ctx.send("This command can only be used in a server.")
+        return
+
+    logs = database.get_voice_logs(ctx.guild.id)
+
+    if not logs:
+        await ctx.send("No voice activity recorded in the last 24 hours.")
+        return
+
+    embed = discord.Embed(title="Voice Channel Logs (Last 24 Hours)", color=discord.Color.purple())
+
+    description_lines = []
+    for log in logs[:20]:  # Limit to 20 most recent entries to keep the embed clean
+        try:
+            # Asynchronously fetch member to ensure we have the latest display name
+            member = await ctx.guild.fetch_member(log['user_id'])
+            user_display = member.display_name
+        except discord.NotFound:
+            user_display = f"Unknown User (ID: {log['user_id']})"
+
+        # Format timestamp to HH:MM:SS
+        timestamp_str = log['timestamp'].strftime('%H:%M:%S')
+
+        # Use emojis for better visual distinction
+        emoji = '🟢' if log['event_type'] == 'join' else '🔴'
+        action = "joined" if log['event_type'] == 'join' else "left"
+
+        description_lines.append(f"`{timestamp_str}` {emoji} **{user_display}** {action} `#{log['channel_name']}`")
+
+    embed.description = "\n".join(description_lines)
+
+    await ctx.send(embed=embed)
+
 
 # --- Run the Bot ---
 if __name__ == "__main__":
