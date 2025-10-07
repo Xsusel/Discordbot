@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 DB_NAME = 'bot_stats.db'
 
@@ -43,6 +43,18 @@ def init_db():
             member_count INTEGER NOT NULL,
             date DATE NOT NULL,
             UNIQUE(guild_id, date)
+        )
+    ''')
+
+    # Table for specific voice join/leave events
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS voice_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            guild_id INTEGER NOT NULL,
+            channel_name TEXT NOT NULL,
+            event_type TEXT NOT NULL, -- 'join' or 'leave'
+            timestamp TIMESTAMP NOT NULL
         )
     ''')
 
@@ -193,3 +205,27 @@ def get_top_active_users(guild_id, limit=10):
     top_users = cursor.fetchall()
     conn.close()
     return top_users
+
+def log_voice_event(user_id, guild_id, channel_name, event_type):
+    """Logs a specific voice channel event (join or leave)."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO voice_events (user_id, guild_id, channel_name, event_type, timestamp) VALUES (?, ?, ?, ?, ?)",
+        (user_id, guild_id, channel_name, event_type, datetime.utcnow())
+    )
+    conn.commit()
+    conn.close()
+
+def get_voice_logs(guild_id):
+    """Retrieves voice event logs from the last 24 hours for a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
+    cursor.execute(
+        "SELECT user_id, channel_name, event_type, timestamp FROM voice_events WHERE guild_id = ? AND timestamp >= ? ORDER BY timestamp DESC",
+        (guild_id, twenty_four_hours_ago)
+    )
+    logs = cursor.fetchall()
+    conn.close()
+    return logs
