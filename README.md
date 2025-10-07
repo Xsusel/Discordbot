@@ -93,6 +93,8 @@ docker build -t discord-bot . && docker run --env-file bot.env -d -p 8080:8080 -
 
 -   `$voicelogs`: Shows a log of users joining and leaving voice channels in the last 24 hours.
 
+-   `$debug`: Runs and displays a report of diagnostic checks, such as the status of the YouTube cookie file.
+
 ## Music Commands
 
 -   `$play <youtube_url_or_search>`: Plays a song from a YouTube URL or search query. If a song is already playing, it adds the new song to the queue.

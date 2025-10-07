@@ -200,6 +200,27 @@ async def voicelogs(ctx):
 
     await ctx.send(embed=embed)
 
+@bot.command(name='debug', help='Runs diagnostic checks for troubleshooting.')
+async def debug(ctx):
+    """Runs diagnostic checks."""
+    embed = discord.Embed(title="System Debug Report", color=discord.Color.orange())
+
+    # --- YouTube Cookie Check ---
+    cookie_path = os.getenv('YOUTUBE_COOKIE_PATH')
+    if not cookie_path:
+        cookie_status = "⚠️ `YOUTUBE_COOKIE_PATH` environment variable is not set. Music playback may fail."
+    else:
+        if os.path.exists(cookie_path):
+            cookie_status = f"✅ Cookie file found at `{cookie_path}`."
+        else:
+            cookie_status = (
+                f"❌ Cookie file **NOT FOUND** at `{cookie_path}`.\n"
+                "**Fix:** Make sure you have a `cookies.txt` file in your project directory and that you have **rebuilt the Docker image** after adding it."
+            )
+    embed.add_field(name="YouTube Cookie Status", value=cookie_status, inline=False)
+
+    await ctx.send(embed=embed)
+
 
 # --- Run the Bot ---
 if __name__ == "__main__":
