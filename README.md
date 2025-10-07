@@ -51,11 +51,18 @@ Before you can run the project, you need to create a Discord bot application and
     git clone <repository-url>
     cd <repository-directory>
     ```
-2.  **Create the `bot.env` file:**
-    Create a file named `bot.env` in the root of the project. Add your Discord bot token that you obtained in the previous step to this file:
+2.  **Create and configure the `bot.env` file:**
+    Create a file named `bot.env` in the root of the project. This file holds the configuration for your bot.
+    You need to add two variables:
     ```
+    # Your bot's secret token from the Discord Developer Portal
     DISCORD_TOKEN=YOUR_DISCORD_BOT_TOKEN
+
+    # The public IP address of your server (e.g., 123.45.67.89)
+    # This is needed for the $dashboard command to generate correct links.
+    BOT_HOST_IP=your_server_ip
     ```
+    Replace `YOUR_DISCORD_BOT_TOKEN` and `your_server_ip` with your actual values.
 
 ## Running the Bot
 

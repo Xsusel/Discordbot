@@ -102,8 +102,15 @@ async def ping(ctx):
 @bot.command(name='dashboard', help='Get a link to the web dashboard.')
 async def dashboard(ctx):
     if ctx.guild:
-        dashboard_url = f"http://localhost:8080/dashboard/{ctx.guild.id}"
-        await ctx.send(f"You can view the server dashboard here: {dashboard_url}")
+        # Use the BOT_HOST_IP from environment variables, defaulting to localhost
+        host_ip = os.getenv('BOT_HOST_IP', 'localhost')
+        dashboard_url = f"http://{host_ip}:8080/dashboard/{ctx.guild.id}"
+
+        message = f"You can view the server dashboard here: {dashboard_url}"
+        if host_ip == 'localhost':
+            message += "\n\n**Note:** The link uses `localhost`. For public access, please set the `BOT_HOST_IP` environment variable in your `bot.env` file."
+
+        await ctx.send(message)
     else:
         await ctx.send("This command can only be used in a server.")
 
