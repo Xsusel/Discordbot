@@ -108,8 +108,26 @@ class Music(commands.Cog):
                     await queue.put(player)
                     await self.play_next(ctx)
 
+            except yt_dlp.utils.DownloadError as e:
+                # Check if the error is the specific "Sign in" error from YouTube
+                if "Sign in to confirm" in str(e):
+                    error_embed = discord.Embed(
+                        title="YouTube is Blocking this Request",
+                        description=(
+                            "To fix this, you need to provide a `cookies.txt` file from your browser.\n\n"
+                            "1. **Follow the instructions** in the `README.md` file under `Troubleshooting` to export your cookies.\n"
+                            "2. **Place the `cookies.txt` file** in the bot's root directory.\n"
+                            "3. **Rebuild the Docker image** with `sudo docker build -t discord-bot .`\n"
+                            "4. **Restart the bot**.\n\n"
+                            "You can use the `$debug` command to check if the bot sees the cookie file."
+                        ),
+                        color=discord.Color.red()
+                    )
+                    await ctx.send(embed=error_embed)
+                else:
+                    await ctx.send(f"A download error occurred: {e}")
             except Exception as e:
-                await ctx.send(f'An error occurred: {e}')
+                await ctx.send(f"An unexpected error occurred: {e}")
 
     @commands.command(name='pause', help='Pauses the current song.')
     async def pause(self, ctx):
