@@ -67,12 +67,20 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    """Called for every message. Logs messages for stats and processes commands."""
+    """Called for every message. Logs messages, checks for auto-responses, and processes commands."""
     if message.author.bot:
         return
+
+    # First, log the message for statistics
     if message.guild:
         database.log_message(message.author.id, message.guild.id)
-    # This is crucial to ensure that command decorators work
+
+    # Then, check if the auto-responder cog should handle this message
+    auto_responder_cog = bot.get_cog('AutoResponder')
+    if auto_responder_cog:
+        await auto_responder_cog.check_for_response(message)
+
+    # Finally, process any potential commands in the message
     await bot.process_commands(message)
 
 @bot.event

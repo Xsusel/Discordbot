@@ -9,6 +9,7 @@ This project provides a Discord bot with a web dashboard that can be easily depl
 -   **Daily Member Count**: Tracks the server's member count daily.
 -   **Web Dashboard**: A web page to visualize server statistics, including a member count graph and a leaderboard of the most active users.
 -   **Music Playback**: Play music from YouTube by providing a URL or search query.
+-   **Auto-Responder**: Automatically replies to questions about settings, directing users to a designated channel.
 -   **Dockerized**: Runs both the bot and the web server in a single container.
 
 ## Prerequisites
@@ -53,7 +54,7 @@ Before you can run the project, you need to create a Discord bot application and
     ```
 2.  **Create and configure the `bot.env` file:**
     Create a file named `bot.env` in the root of the project. This file holds the configuration for your bot.
-    You need to add two variables:
+    You need to add the following variables:
     ```
     # Your bot's secret token from the Discord Developer Portal
     DISCORD_TOKEN=YOUR_DISCORD_BOT_TOKEN
@@ -61,8 +62,12 @@ Before you can run the project, you need to create a Discord bot application and
     # The public IP address of your server (e.g., 123.45.67.89)
     # This is needed for the $dashboard command to generate correct links.
     BOT_HOST_IP=your_server_ip
+
+    # (Optional) The ID of the channel where users should be redirected for settings info.
+    # The bot will reply to questions about settings and point to this channel.
+    SETTINGS_INFO_CHANNEL_ID=1229938413709557900
     ```
-    Replace `YOUR_DISCORD_BOT_TOKEN` and `your_server_ip` with your actual values.
+    Replace the placeholder values with your actual data.
 
 ## Running the Bot
 
