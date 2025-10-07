@@ -14,7 +14,34 @@ This project provides a Discord bot with a web dashboard that can be easily depl
 
 -   [Docker](https://docs.docker.com/get-docker/) must be installed on your system.
 
-## Setup
+## Bot Setup and Invitation
+
+Before you can run the project, you need to create a Discord bot application and invite it to your server.
+
+### 1. Create the Bot Application
+1.  Go to the [Discord Developer Portal](https://discord.com/developers/applications) and log in.
+2.  Click the **"New Application"** button. Give it a name and click **"Create"**.
+3.  In the menu on the left, go to the **"Bot"** tab.
+4.  Under the "Privileged Gateway Intents" section, enable the following intents:
+    -   **SERVER MEMBERS INTENT** (required for member count tracking).
+    -   **MESSAGE CONTENT INTENT** (required for reading messages and commands).
+5.  Click **"Save Changes"**.
+
+### 2. Get the Bot Token
+-   Still on the **"Bot"** tab, click the **"Reset Token"** button (or "View Token" if you've just created it) to reveal your bot's token.
+-   **This token is a secret!** Do not share it with anyone. You will need it in the next step.
+
+### 3. Invite the Bot to Your Server
+1.  In the menu on the left, go to the **"OAuth2"** tab and then click on **"URL Generator"**.
+2.  In the **"SCOPES"** section, check the `bot` box.
+3.  A new **"BOT PERMISSIONS"** section will appear below. Check the following permissions:
+    -   `Send Messages`
+    -   `Read Message History`
+    -   `Embed Links`
+4.  Scroll down and copy the **generated URL**.
+5.  Paste the URL into your browser, select the server you want to add the bot to, and click **"Authorize"**.
+
+## Project Setup
 
 1.  **Clone the repository:**
     ```bash
@@ -23,11 +50,12 @@ This project provides a Discord bot with a web dashboard that can be easily depl
     ```
 
 2.  **Create the `.env` file:**
-    Create a file named `.env` in the root of the project and add your Discord bot token:
+    Create a file named `.env` in the root of the project. **Important:** The filename must be exactly `.env` (starting with a dot). Other names like `bot.env` will not be recognized by the `docker run` command.
+
+    Add your Discord bot token that you obtained in the previous step to this file:
     ```
     DISCORD_TOKEN=YOUR_DISCORD_BOT_TOKEN
     ```
-    Replace `YOUR_DISCORD_BOT_TOKEN` with your actual bot token from the [Discord Developer Portal](https://discord.com/developers/applications).
 
 ## Running the Bot
 
