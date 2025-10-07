@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import yt_dlp
 import asyncio
+import os
 
 # --- FFMPEG and YTDL Options ---
 # These options are crucial for streaming audio from YouTube.
@@ -23,6 +24,12 @@ ffmpeg_options = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
     'options': '-vn',
 }
+
+# Check for a cookie file and add it to the options if it exists
+cookie_path = os.getenv('YOUTUBE_COOKIE_PATH')
+if cookie_path and os.path.exists(cookie_path):
+    ytdl_format_options['cookiefile'] = cookie_path
+    print(f"Using YouTube cookie file at: {cookie_path}")
 
 ytdl = yt_dlp.YoutubeDL(ytdl_format_options)
 
