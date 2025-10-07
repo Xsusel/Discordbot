@@ -2,6 +2,8 @@ import os
 import discord
 import database
 from flask import Flask, render_template, abort
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io
 import base64
@@ -60,39 +62,45 @@ def generate_member_chart(history, guild_name):
 @app.route('/dashboard/<int:guild_id>')
 async def dashboard(guild_id):
     """The main dashboard page for a specific guild."""
-    if not bot_client:
-        abort(503, "Bot client not initialized.")
+    try:
+        if not bot_client:
+            abort(503, "Bot client not initialized.")
 
-    guild = bot_client.get_guild(guild_id)
-    if not guild:
-        abort(404, "Guild not found.")
+        guild = bot_client.get_guild(guild_id)
+        if not guild:
+            abort(404, "Guild not found.")
 
-    # Get member count history and generate chart
-    history = database.get_member_count_history(guild_id)
-    chart = generate_member_chart(history, guild.name)
+        # Get member count history and generate chart
+        history = database.get_member_count_history(guild_id)
+        chart = generate_member_chart(history, guild.name)
 
-    # Get top 10 active users
-    top_users_data = database.get_top_active_users(guild_id)
-    top_users = []
-    for user_row in top_users_data:
-        try:
-            member = await guild.fetch_member(user_row['user_id'])
-            display_name = member.display_name
-            avatar_url = member.avatar.url if member.avatar else "https://cdn.discordapp.com/embed/avatars/0.png"
-        except discord.NotFound:
-            display_name = f"Unknown User (ID: {user_row['user_id']})"
-            avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
+        # Get top 10 active users
+        top_users_data = database.get_top_active_users(guild_id)
+        top_users = []
+        for user_row in top_users_data:
+            try:
+                member = await guild.fetch_member(user_row['user_id'])
+                display_name = member.display_name
+                avatar_url = member.avatar.url if member.avatar else "https://cdn.discordapp.com/embed/avatars/0.png"
+            except discord.NotFound:
+                display_name = f"Unknown User (ID: {user_row['user_id']})"
+                avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
 
-        top_users.append({
-            'name': display_name,
-            'avatar_url': avatar_url,
-            'score': round(user_row['combined_score'])
-        })
+            top_users.append({
+                'name': display_name,
+                'avatar_url': avatar_url,
+                'score': round(user_row['combined_score'])
+            })
 
-    return render_template('index.html',
-                           guild_name=guild.name,
-                           member_chart=chart,
-                           top_users=top_users)
+        return render_template('index.html',
+                               guild_name=guild.name,
+                               member_chart=chart,
+                               top_users=top_users)
+    except Exception as e:
+        import traceback
+        print(f"!!! An error occurred while generating the dashboard for guild {guild_id} !!!")
+        traceback.print_exc()
+        abort(500, f"An internal error occurred: {e}")
 
 def run_webapp():
     """Runs the Flask web application."""
