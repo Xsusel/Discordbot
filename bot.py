@@ -2,16 +2,40 @@ import discord
 import os
 import database
 from datetime import datetime
+from discord.ext import tasks
+import asyncio
+import webapp
+import threading
 
 # --- Bot Setup ---
 intents = discord.Intents.default()
 intents.message_content = True
 intents.voice_states = True  # Required for tracking voice activity
+intents.members = True       # Required for member count
 
 client = discord.Client(intents=intents)
 
 # A dictionary to keep track of active voice sessions {user_id: join_time}
 voice_sessions = {}
+
+# --- Background Tasks ---
+
+@tasks.loop(hours=24)
+async def daily_member_count_task():
+    """A background task that runs daily to log the member count of each guild."""
+    print("Running daily member count task...")
+    for guild in client.guilds:
+        try:
+            member_count = guild.member_count
+            database.log_member_count(guild.id, member_count)
+            print(f"Logged member count for {guild.name}: {member_count}")
+        except Exception as e:
+            print(f"Error logging member count for guild {guild.name}: {e}")
+
+@daily_member_count_task.before_loop
+async def before_daily_task():
+    """Wait until the bot is ready before starting the task."""
+    await client.wait_until_ready()
 
 # --- Events ---
 
@@ -23,14 +47,23 @@ async def on_ready():
     database.init_db()
     print("Database initialized.")
 
+    # Pass the client to the webapp and run it in a separate thread
+    webapp.set_bot_client(client)
+    web_thread = threading.Thread(target=webapp.run_webapp)
+    web_thread.daemon = True
+    web_thread.start()
+    print("Web server started.")
+
+    # Start background tasks
+    if not daily_member_count_task.is_running():
+        daily_member_count_task.start()
+
 @client.event
 async def on_message(message):
     """Called when a message is sent in a channel the bot can see."""
-    # Ignore messages from the bot itself and other bots
     if message.author.bot:
         return
 
-    # Log the message for statistics
     if message.guild:
         database.log_message(message.author.id, message.guild.id)
 
@@ -38,9 +71,16 @@ async def on_message(message):
     if message.content.startswith('$ping'):
         await message.channel.send('Pong!')
 
+    elif message.content.startswith('$dashboard'):
+        if message.guild:
+            # This URL should be configured to the server's public IP or domain.
+            dashboard_url = f"http://localhost:8080/dashboard/{message.guild.id}"
+            await message.channel.send(f"You can view the server dashboard here: {dashboard_url}")
+        else:
+            await message.channel.send("This command can only be used in a server.")
+
     elif message.content.startswith('$stats'):
         args = message.content.split()
-        # Provide usage instructions if the command is malformed
         if len(args) < 2 or args[1] not in ['messages', 'voice']:
             await message.channel.send("Usage: `$stats <messages|voice> [daily|weekly|monthly|all]`")
             return
@@ -65,7 +105,7 @@ async def on_message(message):
                 embed.description = "No messages recorded in this period."
             else:
                 leaderboard = []
-                for i, row in enumerate(stats[:10]):  # Limit to top 10
+                for i, row in enumerate(stats[:10]):
                     try:
                         member = await guild.fetch_member(row['user_id'])
                         display_name = member.display_name
@@ -83,7 +123,7 @@ async def on_message(message):
                 embed.description = "No voice activity recorded in this period."
             else:
                 leaderboard = []
-                for i, row in enumerate(stats[:10]): # Limit to top 10
+                for i, row in enumerate(stats[:10]):
                     try:
                         member = await guild.fetch_member(row['user_id'])
                         display_name = member.display_name
@@ -104,23 +144,19 @@ async def on_voice_state_update(member, before, after):
     user_id = member.id
     guild_id = member.guild.id
 
-    # User joined a voice channel or moved from another
     if after.channel and not before.channel:
         voice_sessions[user_id] = datetime.utcnow()
         print(f"User {member.display_name} joined voice channel {after.channel.name}.")
 
-    # User left a voice channel
     elif not after.channel and before.channel:
         if user_id in voice_sessions:
             join_time = voice_sessions.pop(user_id)
             leave_time = datetime.utcnow()
-            # Log the session to the database
             database.log_voice_session(user_id, guild_id, join_time, leave_time)
             duration = (leave_time - join_time).total_seconds()
             print(f"User {member.display_name} left voice channel. Session duration: {duration:.2f} seconds.")
 
 # --- Run the Bot ---
-# The token is loaded from an environment variable for security.
 token = os.getenv('DISCORD_TOKEN')
 if not token:
     print("Error: DISCORD_TOKEN environment variable not set.")

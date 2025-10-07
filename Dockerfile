@@ -10,8 +10,14 @@ COPY requirements.txt ./
 # Install the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code
-COPY bot.py ./
+# Copy the entire application code into the container
+COPY . .
 
-# Set the command to run the bot
-CMD ["python", "bot.py"]
+# Expose the port the web server will run on
+EXPOSE 8080
+
+# Make the start script executable
+RUN chmod +x /app/start.sh
+
+# Set the command to run the start script
+CMD ["/app/start.sh"]

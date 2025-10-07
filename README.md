@@ -1,10 +1,18 @@
-# Discord Bot in Docker
+# Discord Bot with Web Dashboard in Docker
 
-This project provides a simple Discord bot that can be easily deployed on a VPS using Docker with a single command.
+This project provides a Discord bot with a web dashboard that can be easily deployed on a VPS using Docker. The bot tracks user activity and server statistics, which are then displayed on a web interface.
+
+## Features
+
+-   **Message Tracking**: Logs every message sent by users.
+-   **Voice Activity Tracking**: Records the time users spend in voice channels.
+-   **Daily Member Count**: Tracks the server's member count daily.
+-   **Web Dashboard**: A web page to visualize server statistics, including a member count graph and a leaderboard of the most active users.
+-   **Dockerized**: Runs both the bot and the web server in a single container.
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/) must be installed on your system.
+-   [Docker](https://docs.docker.com/get-docker/) must be installed on your system.
 
 ## Setup
 
@@ -23,20 +31,22 @@ This project provides a simple Discord bot that can be easily deployed on a VPS 
 
 ## Running the Bot
 
-You can build and run the bot in a Docker container with the following command:
+You can build and run the bot and web server in a Docker container with the following command. This command also maps port 8080 from the container to your host machine, allowing you to access the web dashboard.
 
 ```bash
-docker build -t discord-bot . && docker run --env-file .env -d --name my-discord-bot discord-bot
+docker build -t discord-bot . && docker run --env-file .env -d -p 8080:8080 --name my-discord-bot discord-bot
 ```
 
 ### Command Explanation
 
--   `docker build -t discord-bot .`: Builds the Docker image from the `Dockerfile` in the current directory and tags it as `discord-bot`.
--   `docker run --env-file .env -d --name my-discord-bot discord-bot`: Runs the `discord-bot` image in detached mode (`-d`), names the container `my-discord-bot`, and loads environment variables from the `.env` file.
+-   `docker build -t discord-bot .`: Builds the Docker image.
+-   `docker run ...`: Runs the container.
+    -   `--env-file .env`: Loads the Discord token from your `.env` file.
+    -   `-d`: Runs the container in detached mode.
+    -   `-p 8080:8080`: Maps port 8080 of the container to port 8080 on your host machine.
+    -   `--name my-discord-bot`: Names the container for easy management.
 
-## Usage
-
-Once the bot is running and has been invited to your Discord server, you can use the following commands:
+## Bot Commands
 
 -   `$ping`: The bot will reply with `Pong!`.
 
@@ -44,9 +54,18 @@ Once the bot is running and has been invited to your Discord server, you can use
     -   **type**: `messages` or `voice`.
     -   **period** (optional): `daily`, `weekly`, `monthly`, or `all` (default).
 
-    **Examples:**
-    -   `$stats messages weekly`: Shows the top message senders for the last 7 days.
-    -   `$stats voice all`: Shows the all-time leaderboard for time spent in voice channels.
+-   `$dashboard`: The bot will reply with a link to the web dashboard for the current server.
+
+## Web Dashboard
+
+Once the container is running, you can access the web dashboard for any server the bot is in.
+
+1.  Use the `$dashboard` command in your Discord server to get a direct link.
+2.  Alternatively, you can manually navigate to `http://<your-vps-ip-or-domain>:8080/dashboard/<your-server-id>`.
+
+The dashboard displays:
+-   A graph of the server's member count over time.
+-   A leaderboard of the top 10 most active users based on a combined score of messages and voice activity.
 
 ## Stopping the Bot
 
