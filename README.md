@@ -50,7 +50,9 @@ Before you can run the project, you need to create a Discord bot application and
     ```
 
 2.  **Create the `.env` file:**
-    Create a file named `.env` in the root of the project and add your Discord bot token that you obtained in the previous step:
+    Create a file named `.env` in the root of the project. **Important:** The filename must be exactly `.env` (starting with a dot). Other names like `bot.env` will not be recognized by the `docker run` command.
+
+    Add your Discord bot token that you obtained in the previous step to this file:
     ```
     DISCORD_TOKEN=YOUR_DISCORD_BOT_TOKEN
     ```
