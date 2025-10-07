@@ -29,7 +29,7 @@ Before you can run the project, you need to create a Discord bot application and
 
 ### 2. Get the Bot Token
 -   Still on the **"Bot"** tab, click the **"Reset Token"** button (or "View Token" if you've just created it) to reveal your bot's token.
--   **This token is a secret!** Do not share it with anyone. You will need it in the next step.
+-   **This token is a secret!** Do not share it with anyone. You will need it in the "Project Setup" step below.
 
 ### 3. Invite the Bot to Your Server
 1.  In the menu on the left, go to the **"OAuth2"** tab and then click on **"URL Generator"**.
@@ -48,11 +48,8 @@ Before you can run the project, you need to create a Discord bot application and
     git clone <repository-url>
     cd <repository-directory>
     ```
-
-2.  **Create the `.env` file:**
-    Create a file named `.env` in the root of the project. **Important:** The filename must be exactly `.env` (starting with a dot). Other names like `bot.env` will not be recognized by the `docker run` command.
-
-    Add your Discord bot token that you obtained in the previous step to this file:
+2.  **Create the `bot.env` file:**
+    Create a file named `bot.env` in the root of the project. Add your Discord bot token that you obtained in the previous step to this file:
     ```
     DISCORD_TOKEN=YOUR_DISCORD_BOT_TOKEN
     ```
@@ -62,14 +59,14 @@ Before you can run the project, you need to create a Discord bot application and
 You can build and run the bot and web server in a Docker container with the following command. This command also maps port 8080 from the container to your host machine, allowing you to access the web dashboard.
 
 ```bash
-docker build -t discord-bot . && docker run --env-file .env -d -p 8080:8080 --name my-discord-bot discord-bot
+docker build -t discord-bot . && docker run --env-file bot.env -d -p 8080:8080 --name my-discord-bot discord-bot
 ```
 
 ### Command Explanation
 
 -   `docker build -t discord-bot .`: Builds the Docker image.
 -   `docker run ...`: Runs the container.
-    -   `--env-file .env`: Loads the Discord token from your `.env` file.
+    -   `--env-file bot.env`: Loads the Discord token from your `bot.env` file.
     -   `-d`: Runs the container in detached mode.
     -   `-p 8080:8080`: Maps port 8080 of the container to port 8080 on your host machine.
     -   `--name my-discord-bot`: Names the container for easy management.

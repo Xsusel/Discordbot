@@ -157,8 +157,9 @@ async def on_voice_state_update(member, before, after):
             print(f"User {member.display_name} left voice channel. Session duration: {duration:.2f} seconds.")
 
 # --- Run the Bot ---
+# The token is loaded from an environment variable for security.
 token = os.getenv('DISCORD_TOKEN')
-if not token:
-    print("Error: DISCORD_TOKEN environment variable not set.")
-else:
-    client.run(token)
+
+# The start.sh script will check if the token is set.
+# If it's not, the script will exit with an error.
+client.run(token)
