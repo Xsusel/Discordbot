@@ -1,5 +1,5 @@
 discord.py
-Flask[async]
+Flask
 matplotlib
 yt-dlp
 PyNaCl

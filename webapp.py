@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import io
 import base64
 from datetime import datetime
+import asyncio
 
 app = Flask(__name__)
 
@@ -60,11 +61,11 @@ def generate_member_chart(history, guild_name):
     return chart_base64
 
 @app.route('/dashboard/<int:guild_id>')
-async def dashboard(guild_id):
+def dashboard(guild_id):
     """The main dashboard page for a specific guild."""
     try:
-        if not bot_client:
-            abort(503, "Bot client not initialized.")
+        if not bot_client or not bot_client.is_ready():
+            abort(503, "Bot client not initialized or not ready.")
 
         guild = bot_client.get_guild(guild_id)
         if not guild:
@@ -79,11 +80,18 @@ async def dashboard(guild_id):
         top_users = []
         for user_row in top_users_data:
             try:
-                member = await guild.fetch_member(user_row['user_id'])
+                # Safely run the async fetch_member in the bot's event loop from this thread
+                future = asyncio.run_coroutine_threadsafe(guild.fetch_member(user_row['user_id']), bot_client.loop)
+                member = future.result(timeout=5)  # Add a timeout for safety
                 display_name = member.display_name
                 avatar_url = member.avatar.url if member.avatar else "https://cdn.discordapp.com/embed/avatars/0.png"
             except discord.NotFound:
                 display_name = f"Unknown User (ID: {user_row['user_id']})"
+                avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
+            except Exception as e:
+                # Handle other potential errors like timeouts or the user leaving the server
+                print(f"Could not fetch member {user_row['user_id']}: {e}")
+                display_name = f"User (ID: {user_row['user_id']})"
                 avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
 
             top_users.append({
