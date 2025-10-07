@@ -62,10 +62,6 @@ Before you can run the project, you need to create a Discord bot application and
     # The public IP address of your server (e.g., 123.45.67.89)
     # This is needed for the $dashboard command to generate correct links.
     BOT_HOST_IP=your_server_ip
-
-    # (Optional) The ID of the channel where users should be redirected for settings info.
-    # The bot will reply to questions about settings and point to this channel.
-    SETTINGS_INFO_CHANNEL_ID=1229938413709557900
     ```
     Replace the placeholder values with your actual data.
 
@@ -99,6 +95,22 @@ docker build -t discord-bot . && docker run --env-file bot.env -d -p 8080:8080 -
 -   `$voicelogs`: Shows a log of users joining and leaving voice channels in the last 24 hours.
 
 -   `$debug`: Runs and displays a report of diagnostic checks, such as the status of the YouTube cookie file.
+
+## Auto-Responder Commands
+
+The auto-responder feature is fully configurable via commands. These commands are only available to users with **Administrator** permissions. The main command group is `$ar`.
+
+-   `$ar list`: Shows the current configuration for the auto-responder, including its status, target channel, reply message, and all keywords.
+-   `$ar toggle`: Enables or disables the auto-responder on the server.
+-   `$ar channel <#channel>`: Sets the text channel where users will be redirected.
+-   `$ar message <your custom message>`: Sets the reply message. You must include `{mention}` and `{channel}` placeholders, which will be replaced with the user's mention and the target channel link, respectively.
+-   `$ar add <type> <keyword>`: Adds a new keyword.
+    -   **type**: Must be `topic` or `question`.
+    -   **keyword**: The word or phrase to add.
+-   `$ar remove <type> <keyword>`: Removes a keyword.
+    -   **type**: Must be `topic` or `question`.
+    -   **keyword**: The word or phrase to remove.
+-   `$ar seed`: Populates the keyword lists with a recommended default set of keywords to get you started quickly.
 
 ## Music Commands
 
