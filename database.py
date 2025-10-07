@@ -58,6 +58,27 @@ def init_db():
         )
     ''')
 
+    # Table for auto-responder settings per guild
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ar_settings (
+            guild_id INTEGER PRIMARY KEY,
+            is_enabled INTEGER NOT NULL DEFAULT 0,
+            target_channel_id INTEGER,
+            reply_message TEXT NOT NULL DEFAULT 'Cześć, {mention}! Widzę, że pytasz o ustawienia. Wszystkie potrzebne informacje znajdziesz na kanale <#{channel}>.'
+        )
+    ''')
+
+    # Table for auto-responder keywords per guild
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ar_keywords (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id INTEGER NOT NULL,
+            keyword_type TEXT NOT NULL, -- 'topic' or 'question'
+            keyword TEXT NOT NULL,
+            UNIQUE(guild_id, keyword_type, keyword)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
@@ -229,3 +250,110 @@ def get_voice_logs(guild_id):
     logs = cursor.fetchall()
     conn.close()
     return logs
+
+# --- Auto-Responder Functions ---
+
+def get_ar_config(guild_id):
+    """Gets the auto-responder configuration for a specific guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO ar_settings (guild_id) VALUES (?)", (guild_id,))
+    conn.commit()
+    cursor.execute("SELECT * FROM ar_settings WHERE guild_id = ?", (guild_id,))
+    config = cursor.fetchone()
+    conn.close()
+    return config
+
+def get_ar_keywords(guild_id):
+    """Gets all auto-responder keywords for a specific guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT keyword_type, keyword FROM ar_keywords WHERE guild_id = ?", (guild_id,))
+    keywords = cursor.fetchall()
+    conn.close()
+    return keywords
+
+def set_ar_enabled(guild_id, is_enabled):
+    """Enables or disables the auto-responder for a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE ar_settings SET is_enabled = ? WHERE guild_id = ?", (int(is_enabled), guild_id))
+    conn.commit()
+    conn.close()
+
+def set_ar_channel(guild_id, channel_id):
+    """Sets the target channel for the auto-responder."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE ar_settings SET target_channel_id = ? WHERE guild_id = ?", (channel_id, guild_id))
+    conn.commit()
+    conn.close()
+
+def set_ar_message(guild_id, message):
+    """Sets the custom reply message for the auto-responder."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE ar_settings SET reply_message = ? WHERE guild_id = ?", (message, guild_id))
+    conn.commit()
+    conn.close()
+
+def add_ar_keyword(guild_id, keyword_type, keyword):
+    """Adds a keyword to the auto-responder list."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO ar_keywords (guild_id, keyword_type, keyword) VALUES (?, ?, ?)",
+            (guild_id, keyword_type, keyword.lower())
+        )
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        # This keyword already exists
+        return False
+    finally:
+        conn.close()
+
+def remove_ar_keyword(guild_id, keyword_type, keyword):
+    """Removes a keyword from the auto-responder list."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "DELETE FROM ar_keywords WHERE guild_id = ? AND keyword_type = ? AND keyword = ?",
+        (guild_id, keyword_type, keyword.lower())
+    )
+    changes = conn.total_changes
+    conn.commit()
+    conn.close()
+    return changes > 0
+
+def seed_default_ar_keywords(guild_id):
+    """Seeds the database with a default set of keywords for a guild."""
+    DEFAULT_TOPIC_KEYWORDS = [
+        'celownik', 'czułość', 'dpi', 'myszka', 'grafika', 'ustawienia graficzne',
+        'rozdziałka', 'rozdzielczość', 'stretch', 'stretched', 'rozciągnięta',
+        'config', 'cfg', 'resolution', 'crosshair', 'sensitivity', 'sens'
+    ]
+    DEFAULT_QUESTION_WORDS = [
+        'jak', 'gdzie', 'ktoś', 'ma ktoś', 'poda', 'podeśle', 'podeślesz', 'jaki',
+        'jaka', 'jakie', 'czy', 'pomocy', 'pytanie', 'pomoże', 'macie', 'ustawić',
+        'zmienić', 'polecacie'
+    ]
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    topic_inserts = [(guild_id, 'topic', keyword) for keyword in DEFAULT_TOPIC_KEYWORDS]
+    question_inserts = [(guild_id, 'question', keyword) for keyword in DEFAULT_QUESTION_WORDS]
+
+    try:
+        # Use executemany for efficiency and IGNORE to skip duplicates
+        cursor.executemany("INSERT OR IGNORE INTO ar_keywords (guild_id, keyword_type, keyword) VALUES (?, ?, ?)", topic_inserts)
+        cursor.executemany("INSERT OR IGNORE INTO ar_keywords (guild_id, keyword_type, keyword) VALUES (?, ?, ?)", question_inserts)
+        conn.commit()
+        return conn.total_changes
+    except Exception as e:
+        print(f"Error seeding keywords: {e}")
+        return 0
+    finally:
+        conn.close()
