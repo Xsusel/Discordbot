@@ -79,6 +79,39 @@ def init_db():
         )
     ''')
 
+    # Table for warning system settings per guild
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS warn_settings (
+            guild_id INTEGER PRIMARY KEY,
+            warn_limit INTEGER NOT NULL DEFAULT 3,
+            action TEXT NOT NULL DEFAULT 'kick', -- 'kick' or 'ban'
+            ban_duration_days INTEGER DEFAULT 7
+        )
+    ''')
+
+    # Table for individual warnings
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS warnings (
+            warn_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            moderator_id INTEGER NOT NULL,
+            reason TEXT,
+            timestamp TIMESTAMP NOT NULL
+        )
+    ''')
+
+    # Table to track active timed bans
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS active_bans (
+            ban_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            unban_timestamp TIMESTAMP NOT NULL,
+            UNIQUE(guild_id, user_id)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
@@ -327,6 +360,35 @@ def remove_ar_keyword(guild_id, keyword_type, keyword):
     conn.close()
     return changes > 0
 
+def add_active_ban(guild_id, user_id, unban_timestamp):
+    """Adds a record for an active timed ban."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT OR REPLACE INTO active_bans (guild_id, user_id, unban_timestamp) VALUES (?, ?, ?)",
+        (guild_id, user_id, unban_timestamp)
+    )
+    conn.commit()
+    conn.close()
+
+def get_expired_bans():
+    """Retrieves all bans that are past their expiration timestamp."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    now = datetime.utcnow()
+    cursor.execute("SELECT guild_id, user_id FROM active_bans WHERE unban_timestamp <= ?", (now,))
+    expired_bans = cursor.fetchall()
+    conn.close()
+    return expired_bans
+
+def remove_active_ban(guild_id, user_id):
+    """Removes an active ban record, typically after the user has been unbanned."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM active_bans WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
+    conn.commit()
+    conn.close()
+
 def seed_default_ar_keywords(guild_id):
     """Seeds the database with a default set of keywords for a guild."""
     DEFAULT_TOPIC_KEYWORDS = [
@@ -357,3 +419,85 @@ def seed_default_ar_keywords(guild_id):
         return 0
     finally:
         conn.close()
+
+# --- Warning System Functions ---
+
+def get_warn_settings(guild_id):
+    """Gets the warning system configuration for a specific guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO warn_settings (guild_id) VALUES (?)", (guild_id,))
+    conn.commit()
+    cursor.execute("SELECT * FROM warn_settings WHERE guild_id = ?", (guild_id,))
+    settings = cursor.fetchone()
+    conn.close()
+    return settings
+
+def set_warn_limit(guild_id, limit):
+    """Sets the warning limit for a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE warn_settings SET warn_limit = ? WHERE guild_id = ?", (limit, guild_id))
+    conn.commit()
+    conn.close()
+
+def set_warn_action(guild_id, action):
+    """Sets the enforcement action for a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE warn_settings SET action = ? WHERE guild_id = ?", (action, guild_id))
+    conn.commit()
+    conn.close()
+
+def set_ban_duration(guild_id, duration_days):
+    """Sets the ban duration for a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE warn_settings SET ban_duration_days = ? WHERE guild_id = ?", (duration_days, guild_id))
+    conn.commit()
+    conn.close()
+
+def add_warning(guild_id, user_id, moderator_id, reason):
+    """Adds a warning for a user and returns their new total warning count."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO warnings (guild_id, user_id, moderator_id, reason, timestamp) VALUES (?, ?, ?, ?, ?)",
+        (guild_id, user_id, moderator_id, reason, datetime.utcnow())
+    )
+    conn.commit()
+
+    # Get the new total number of warnings for the user
+    cursor.execute("SELECT COUNT(*) FROM warnings WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
+    count = cursor.fetchone()[0]
+
+    conn.close()
+    return count
+
+def get_user_warnings(guild_id, user_id):
+    """Retrieves all warnings for a specific user in a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT warn_id, moderator_id, reason, timestamp FROM warnings WHERE guild_id = ? AND user_id = ? ORDER BY timestamp DESC", (guild_id, user_id))
+    warnings = cursor.fetchall()
+    conn.close()
+    return warnings
+
+def get_all_warnings_summary(guild_id):
+    """Retrieves a summary of warning counts for all users in a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT user_id, COUNT(*) as warn_count FROM warnings WHERE guild_id = ? GROUP BY user_id ORDER BY warn_count DESC", (guild_id,))
+    summary = cursor.fetchall()
+    conn.close()
+    return summary
+
+def remove_warning(warn_id, guild_id):
+    """Removes a specific warning by its ID."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM warnings WHERE warn_id = ? AND guild_id = ?", (warn_id, guild_id))
+    changes = conn.total_changes
+    conn.commit()
+    conn.close()
+    return changes > 0

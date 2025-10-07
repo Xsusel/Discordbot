@@ -42,6 +42,8 @@ Before you can run the project, you need to create a Discord bot application and
     -   `Embed Links`
     -   `Connect` (to join voice channels)
     -   `Speak` (to play audio)
+    -   `Kick Members` (for the warning system)
+    -   `Ban Members` (for the warning system)
 4.  Scroll down and copy the **generated URL**.
 5.  Paste the URL into your browser, select the server you want to add the bot to, and click **"Authorize"**.
 
@@ -95,6 +97,23 @@ docker build -t discord-bot . && docker run --env-file bot.env -d -p 8080:8080 -
 -   `$voicelogs`: Shows a log of users joining and leaving voice channels in the last 24 hours.
 
 -   `$debug`: Runs and displays a report of diagnostic checks, such as the status of the YouTube cookie file.
+
+## Moderation Commands
+
+The following commands require the user to have `Kick Members` or `Ban Members` permissions.
+
+-   `$warn <@user> [reason]`: Gives a warning to a user. If the user reaches the configured warning limit, the bot will automatically take the configured action (kick or ban).
+-   `$warnings [@user]`: Shows a list of all warnings for a specific user. If no user is mentioned, it shows a summary of all users with warnings.
+-   `$unwarn <warn_id>`: Removes a specific warning by its ID. You can get the ID from the `$warnings` command.
+
+### Warning System Configuration
+
+These commands are for server administrators (`Administrator` permission required) and control the behavior of the warning system.
+
+-   `$warnconfig view`: Displays the current settings for the warning system.
+-   `$warnconfig limit <number>`: Sets the number of warnings a user can receive before an action is taken.
+-   `$warnconfig action <kick|ban>`: Sets the action to be taken when a user reaches the warning limit.
+-   `$warnconfig banduration <days>`: Sets the duration of a ban in days (only applies if the action is set to `ban`).
 
 ## Auto-Responder Commands
 
