@@ -112,6 +112,37 @@ def init_db():
         )
     ''')
 
+    # Table for economy system settings per guild
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS economy_settings (
+            guild_id INTEGER PRIMARY KEY,
+            currency_name TEXT NOT NULL DEFAULT 'Points',
+            bet_win_chance INTEGER NOT NULL DEFAULT 45 -- Percentage
+        )
+    ''')
+
+    # Table for user wallets
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS economy_wallets (
+            wallet_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            balance INTEGER NOT NULL DEFAULT 0,
+            UNIQUE(guild_id, user_id)
+        )
+    ''')
+
+    # Table for shop items (roles)
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS economy_shop_items (
+            item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id INTEGER NOT NULL,
+            role_id INTEGER NOT NULL,
+            price INTEGER NOT NULL,
+            UNIQUE(guild_id, role_id)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
@@ -346,6 +377,138 @@ def add_ar_keyword(guild_id, keyword_type, keyword):
         return False
     finally:
         conn.close()
+
+# --- Economy System Functions ---
+
+def get_economy_settings(guild_id):
+    """Gets the economy system configuration for a specific guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO economy_settings (guild_id) VALUES (?)", (guild_id,))
+    conn.commit()
+    cursor.execute("SELECT * FROM economy_settings WHERE guild_id = ?", (guild_id,))
+    settings = cursor.fetchone()
+    conn.close()
+    return settings
+
+def set_bet_win_chance(guild_id, chance):
+    """Sets the win chance for the betting game."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE economy_settings SET bet_win_chance = ? WHERE guild_id = ?", (chance, guild_id))
+    conn.commit()
+    conn.close()
+
+def get_wallet_balance(guild_id, user_id):
+    """Gets the wallet balance for a user, creating a wallet if it doesn't exist."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO economy_wallets (guild_id, user_id) VALUES (?, ?)", (guild_id, user_id))
+    conn.commit()
+    cursor.execute("SELECT balance FROM economy_wallets WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
+    result = cursor.fetchone()
+    conn.close()
+    return result['balance'] if result else 0
+
+def update_wallet_balance(guild_id, user_id, amount):
+    """Updates a user's wallet balance by a relative amount (can be negative)."""
+    # First, ensure the wallet exists
+    get_wallet_balance(guild_id, user_id)
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE economy_wallets SET balance = balance + ? WHERE guild_id = ? AND user_id = ?",
+        (amount, guild_id, user_id)
+    )
+    conn.commit()
+    # Fetch the new balance
+    cursor.execute("SELECT balance FROM economy_wallets WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
+    new_balance = cursor.fetchone()['balance']
+    conn.close()
+    return new_balance
+
+def get_top_balances(guild_id, limit=10):
+    """Gets the top N richest users in a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT user_id, balance FROM economy_wallets WHERE guild_id = ? ORDER BY balance DESC LIMIT ?",
+        (guild_id, limit)
+    )
+    top_users = cursor.fetchall()
+    conn.close()
+    return top_users
+
+def get_shop_items(guild_id):
+    """Gets all shop items for a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT item_id, role_id, price FROM economy_shop_items WHERE guild_id = ? ORDER BY price ASC", (guild_id,))
+    items = cursor.fetchall()
+    conn.close()
+    return items
+
+def get_shop_item(item_id):
+    """Gets a specific shop item by its ID."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM economy_shop_items WHERE item_id = ?", (item_id,))
+    item = cursor.fetchone()
+    conn.close()
+    return item
+
+def add_shop_item(guild_id, role_id, price):
+    """Adds a new item to the shop."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO economy_shop_items (guild_id, role_id, price) VALUES (?, ?, ?)",
+            (guild_id, role_id, price)
+        )
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False # Item (role) already exists
+    finally:
+        conn.close()
+
+def remove_shop_item(item_id):
+    """Removes an item from the shop."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM economy_shop_items WHERE item_id = ?", (item_id,))
+    changes = conn.total_changes
+    conn.commit()
+    conn.close()
+    return changes > 0
+
+def get_activity_scores_since(guild_id, since_timestamp):
+    """Calculates activity scores for all users since a given timestamp."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    query = """
+        SELECT
+            user_id,
+            SUM(message_score) + SUM(voice_score) AS activity_score
+        FROM (
+            SELECT user_id, COUNT(*) * 1.0 AS message_score, 0 AS voice_score
+            FROM messages
+            WHERE guild_id = ? AND timestamp > ?
+            GROUP BY user_id
+            UNION ALL
+            SELECT user_id, 0 AS message_score, SUM(strftime('%s', session_end) - strftime('%s', session_start)) / 60.0 AS voice_score
+            FROM voice_sessions
+            WHERE guild_id = ? AND session_start > ?
+            GROUP BY user_id
+        )
+        GROUP BY user_id
+        HAVING activity_score > 0
+    """
+    cursor.execute(query, (guild_id, since_timestamp, guild_id, since_timestamp))
+    scores = cursor.fetchall()
+    conn.close()
+    return scores
 
 def remove_ar_keyword(guild_id, keyword_type, keyword):
     """Removes a keyword from the auto-responder list."""
