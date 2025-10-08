@@ -313,6 +313,8 @@ def set_ar_enabled(guild_id, is_enabled):
     """Enables or disables the auto-responder for a guild."""
     conn = get_db_connection()
     cursor = conn.cursor()
+    # Ensure a settings row exists before trying to update it
+    cursor.execute("INSERT OR IGNORE INTO ar_settings (guild_id) VALUES (?)", (guild_id,))
     cursor.execute("UPDATE ar_settings SET is_enabled = ? WHERE guild_id = ?", (int(is_enabled), guild_id))
     conn.commit()
     conn.close()
@@ -321,6 +323,8 @@ def set_ar_channel(guild_id, channel_id):
     """Sets the target channel for the auto-responder."""
     conn = get_db_connection()
     cursor = conn.cursor()
+    # Ensure a settings row exists before trying to update it
+    cursor.execute("INSERT OR IGNORE INTO ar_settings (guild_id) VALUES (?)", (guild_id,))
     cursor.execute("UPDATE ar_settings SET target_channel_id = ? WHERE guild_id = ?", (channel_id, guild_id))
     conn.commit()
     conn.close()
@@ -329,6 +333,8 @@ def set_ar_message(guild_id, message):
     """Sets the custom reply message for the auto-responder."""
     conn = get_db_connection()
     cursor = conn.cursor()
+    # Ensure a settings row exists before trying to update it
+    cursor.execute("INSERT OR IGNORE INTO ar_settings (guild_id) VALUES (?)", (guild_id,))
     cursor.execute("UPDATE ar_settings SET reply_message = ? WHERE guild_id = ?", (message, guild_id))
     conn.commit()
     conn.close()
