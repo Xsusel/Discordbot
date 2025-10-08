@@ -1,0 +1,20 @@
+WARNING: Starting in verification mode. Bot will not connect to Discord.
+Database initialized.
+Loaded cog: utility.py
+Loaded cog: statistics.py
+Auto-responder cog loaded.
+Loaded cog: auto_responder.py
+Moderation cog loaded and unban task started.
+Loaded cog: moderation.py
+Failed to load cog general.py: Extension 'cogs.general' raised an error: CommandRegistrationError: The command debug is already an existing command or alias.
+Audit Log cog loaded.
+Loaded cog: audit_log.py
+Loaded cog: music.py
+Economy cog loaded and earning task started.
+Loaded cog: economy.py
+Web server started for verification.
+Process is now running for verification. Press Ctrl+C to stop.
+ * Serving Flask app 'webapp'
+ * Debug mode: off
+Address already in use
+Port 8080 is in use by another program. Either identify and stop that program, or start the server with a different port.

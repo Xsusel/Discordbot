@@ -111,7 +111,7 @@ class AuditLog(commands.Cog):
             if user_id in self.voice_sessions:
                 join_time = self.voice_sessions.pop(user_id)
                 leave_time = datetime.utcnow()
-                database.log_voice_session(guild_id, user_id, join_time, leave_time)
+                database.log_voice_session(user_id, guild_id, join_time, leave_time)
 
             embed = discord.Embed(description=f"**{member.mention} left voice channel `{before.channel.name}`**", color=0x99AAB5, timestamp=datetime.utcnow())
             embed.set_author(name=f"{member.name} ({member.id})", icon_url=member.display_avatar.url)
