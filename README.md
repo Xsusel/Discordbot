@@ -10,6 +10,7 @@ This project provides a Discord bot with a web dashboard that can be easily depl
 -   **Web Dashboard**: A web page to visualize server statistics, including a member count graph and a leaderboard of the most active users.
 -   **Music Playback**: Play music from YouTube by providing a URL or search query.
 -   **Auto-Responder**: Automatically replies to questions about settings, directing users to a designated channel.
+-   **Economy System**: A server-wide currency system where users earn currency for activity and can spend it in a role shop or gamble it.
 -   **Dockerized**: Runs both the bot and the web server in a single container.
 
 ## Prerequisites
@@ -44,6 +45,7 @@ Before you can run the project, you need to create a Discord bot application and
     -   `Speak` (to play audio)
     -   `Kick Members` (for the warning system)
     -   `Ban Members` (for the warning system)
+    -   `Manage Roles` (for the economy shop)
 4.  Scroll down and copy the **generated URL**.
 5.  Paste the URL into your browser, select the server you want to add the bot to, and click **"Authorize"**.
 
@@ -130,6 +132,22 @@ The auto-responder feature is fully configurable via commands. These commands ar
     -   **type**: Must be `topic` or `question`.
     -   **keyword**: The word or phrase to remove.
 -   `$ar seed`: Populates the keyword lists with a recommended default set of keywords to get you started quickly.
+
+## Economy & Shop Commands
+
+### User Commands
+-   `$balance [@user]`: Checks your own or another user's currency balance.
+-   `$top`: Displays the leaderboard of the top 10 richest users.
+-   `$shop`: Shows all the roles available for purchase.
+-   `$buy <item_id>`: Buys a role from the shop using its ID.
+-   `$bet <amount>`: Bets a certain amount of currency. The win chance can be configured by an admin.
+
+### Admin Commands
+-   `$give <@user> <amount>`: Gives a user a specified amount of currency.
+-   `$take <@user> <amount>`: Removes a specified amount of currency from a user.
+-   `$shopadmin add <@role> <price>`: Adds a role to the shop for a specific price.
+-   `$shopadmin remove <item_id>`: Removes a role from the shop using its item ID.
+-   `$betconfig chance <percentage>`: Sets the win chance for the `$bet` command (e.g., `45` for 45%).
 
 ## Music Commands
 
