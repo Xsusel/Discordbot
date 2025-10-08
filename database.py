@@ -35,6 +35,16 @@ def init_db():
         )
     ''')
 
+    # Table to track users currently in a voice channel
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS active_voice_sessions (
+            guild_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            join_time TIMESTAMP NOT NULL,
+            PRIMARY KEY (guild_id, user_id)
+        )
+    ''')
+
     # Table for daily member count tracking
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS member_counts (
@@ -161,6 +171,44 @@ def log_voice_session(user_id, guild_id, start_time, end_time):
         "INSERT INTO voice_sessions (user_id, guild_id, session_start, session_end) VALUES (?, ?, ?, ?)",
         (user_id, guild_id, start_time, end_time)
     )
+    conn.commit()
+    conn.close()
+
+def start_voice_session(guild_id, user_id):
+    """Starts tracking a new voice session in the database."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT OR REPLACE INTO active_voice_sessions (guild_id, user_id, join_time) VALUES (?, ?, ?)",
+        (guild_id, user_id, datetime.utcnow())
+    )
+    conn.commit()
+    conn.close()
+
+def end_voice_session(guild_id, user_id):
+    """Ends a voice session, logs it, and removes it from the active tracking table."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # First, get the join time
+    cursor.execute("SELECT join_time FROM active_voice_sessions WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
+    result = cursor.fetchone()
+
+    if result:
+        join_time = result['join_time']
+        # Log the completed session to the historical table
+        log_voice_session(user_id, guild_id, join_time, datetime.utcnow())
+        # Remove the session from the active table
+        cursor.execute("DELETE FROM active_voice_sessions WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
+        conn.commit()
+
+    conn.close()
+    return result is not None
+
+def clear_all_active_voice_sessions():
+    """Clears the entire active_voice_sessions table, typically on bot startup."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM active_voice_sessions")
     conn.commit()
     conn.close()
 

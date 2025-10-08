@@ -6,7 +6,7 @@ from datetime import datetime
 class AuditLog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.voice_sessions = {}
+        # The self.voice_sessions dictionary is removed in favor of a persistent database solution.
         print("Audit Log cog loaded.")
 
     async def _send_log_message(self, guild_id, embed):
@@ -23,6 +23,22 @@ class AuditLog(commands.Cog):
                 print(f"Failed to send to audit log channel in guild {guild_id}. Missing permissions.")
             except Exception as e:
                 print(f"An error occurred while sending to audit log channel: {e}")
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        """Synchronizes voice states when the bot starts up."""
+        print("Audit Log cog is ready. Synchronizing voice states.")
+        # Clear any potentially stale sessions from a previous crash
+        database.clear_all_active_voice_sessions()
+        # Go through all guilds and find users currently in voice channels
+        for guild in self.bot.guilds:
+            for channel in guild.voice_channels:
+                for member in channel.members:
+                    if not member.bot:
+                        # Start a new session for anyone found in a channel on startup
+                        database.start_voice_session(guild.id, member.id)
+                        print(f"Synchronized active user: {member.name} in {guild.name}")
+        print("Voice state synchronization complete.")
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -92,33 +108,33 @@ class AuditLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        """Logs voice channel events and tracks session duration for statistics."""
+        """Logs voice channel events and tracks session duration for statistics using the database."""
         if member.bot:
             return
 
         user_id = member.id
         guild_id = member.guild.id
 
-        # User joins a voice channel for the first time
+        # User joins a voice channel (from no channel)
         if not before.channel and after.channel:
-            self.voice_sessions[user_id] = datetime.utcnow()
+            database.start_voice_session(guild_id, user_id)
             embed = discord.Embed(description=f"**{member.mention} joined voice channel `{after.channel.name}`**", color=0x7289DA, timestamp=datetime.utcnow())
             embed.set_author(name=f"{member.name} ({member.id})", icon_url=member.display_avatar.url)
             await self._send_log_message(guild_id, embed)
 
-        # User leaves a voice channel completely
+        # User leaves a voice channel (to no channel)
         elif before.channel and not after.channel:
-            if user_id in self.voice_sessions:
-                join_time = self.voice_sessions.pop(user_id)
-                leave_time = datetime.utcnow()
-                database.log_voice_session(guild_id, user_id, join_time, leave_time)
-
+            # The end_voice_session function now handles finding the start time,
+            # logging the full session, and cleaning up the active session record.
+            database.end_voice_session(guild_id, user_id)
             embed = discord.Embed(description=f"**{member.mention} left voice channel `{before.channel.name}`**", color=0x99AAB5, timestamp=datetime.utcnow())
             embed.set_author(name=f"{member.name} ({member.id})", icon_url=member.display_avatar.url)
             await self._send_log_message(guild_id, embed)
 
         # User moves between voice channels
         elif before.channel and after.channel and before.channel != after.channel:
+            # When a user moves, we don't need to do anything with the database,
+            # as their session is continuous. We just log the move itself.
             embed = discord.Embed(description=f"**{member.mention} moved from `{before.channel.name}` to `{after.channel.name}`**", color=0x99AAB5, timestamp=datetime.utcnow())
             embed.set_author(name=f"{member.name} ({member.id})", icon_url=member.display_avatar.url)
             await self._send_log_message(guild_id, embed)
