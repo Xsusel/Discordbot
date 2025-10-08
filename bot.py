@@ -16,6 +16,8 @@ intents.members = True          # For member count (stats)
 # Initialize the Bot with a command prefix and the defined intents
 bot = commands.Bot(command_prefix='$', intents=intents)
 
+# This dictionary is for tracking voice time for statistics, separate from the music cog
+voice_sessions = {}
 
 # --- Background Tasks ---
 @tasks.loop(hours=24)
@@ -83,31 +85,6 @@ async def on_message(message):
 
 # The on_voice_state_update event is now handled by the AuditLog cog
 # to provide detailed logging and to track session times for statistics.
-
-# --- Global Error Handler ---
-@bot.event
-async def on_command_error(ctx, error):
-    """A global error handler for all commands."""
-    if isinstance(error, commands.CommandNotFound):
-        # Silently ignore commands that don't exist
-        return
-    elif isinstance(error, commands.MissingRequiredArgument):
-        # Provide helpful feedback for missing arguments
-        await ctx.send(f"❌ You are missing a required argument: `{error.param.name}`.\n"
-                       f"Use `{ctx.prefix}help {ctx.command}` for more info.")
-    elif isinstance(error, commands.ChannelNotFound):
-        await ctx.send(f"❌ I could not find the channel `{error.argument}`. Please make sure it exists and I can see it.")
-    elif isinstance(error, commands.BadArgument):
-        await ctx.send(f"❌ Invalid argument provided. Please check the command's usage with `{ctx.prefix}help {ctx.command}`.")
-    elif isinstance(error, commands.NoPrivateMessage):
-        await ctx.send("This command cannot be used in private messages.")
-    elif isinstance(error, commands.MissingPermissions):
-        await ctx.send(f"🚫 You do not have the required permissions to run this command: `{'`, `'.join(error.missing_permissions)}`")
-    else:
-        # For any other errors, log them to the console
-        print(f"Ignoring exception in command {ctx.command}:")
-        import traceback
-        traceback.print_exception(type(error), error, error.__traceback__)
 
 # --- General Bot Commands ---
 # All commands have been moved to their respective cogs in the 'cogs/' directory.
