@@ -80,7 +80,7 @@ class AutoResponder(commands.Cog):
 
     @ar.command(name='channel')
     @commands.has_permissions(administrator=True)
-    async def ar_channel(self, ctx, channel: discord.TextChannel):
+    async def ar_channel(self, ctx, channel: discord.abc.GuildChannel):
         """Sets the channel where users will be redirected."""
         database.set_ar_channel(ctx.guild.id, channel.id)
         await ctx.send(f"✅ Auto-responder will now redirect users to {channel.mention}.")
