@@ -60,7 +60,7 @@ def generate_member_chart(history, guild_name):
     return chart_base64
 
 @app.route('/dashboard/<int:guild_id>')
-async def dashboard(guild_id):
+def dashboard(guild_id):
     """The main dashboard page for a specific guild."""
     try:
         if not bot_client or not bot_client.is_ready():
@@ -78,12 +78,15 @@ async def dashboard(guild_id):
         top_users_data = database.get_top_active_users(guild_id)
         top_users = []
         for user_row in top_users_data:
-            try:
-                # Asynchronously fetch the member to get up-to-date info
-                member = await guild.fetch_member(user_row['user_id'])
+            # Use the synchronous, cache-based get_member() to avoid network calls from the web thread.
+            # This is stable and avoids the RuntimeError.
+            member = guild.get_member(user_row['user_id'])
+
+            if member:
                 display_name = member.display_name
                 avatar_url = member.avatar.url if member.avatar else "https://cdn.discordapp.com/embed/avatars/0.png"
-            except discord.NotFound:
+            else:
+                # Fallback if the member is not in the cache (e.g., they left the server)
                 display_name = f"Unknown User (ID: {user_row['user_id']})"
                 avatar_url = "https://cdn.discordapp.com/embed/avatars/0.png"
 
