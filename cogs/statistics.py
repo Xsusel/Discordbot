@@ -55,38 +55,5 @@ class Statistics(commands.Cog):
 
         await ctx.send(embed=embed)
 
-    @commands.command(name='voicelogs', help='Shows voice channel join/leave logs from the last 24 hours.')
-    async def voicelogs(self, ctx):
-        """Displays the voice channel join/leave logs for the last 24 hours."""
-        if not ctx.guild:
-            await ctx.send("This command can only be used in a server.")
-            return
-
-        logs = database.get_voice_logs(ctx.guild.id)
-
-        if not logs:
-            await ctx.send("No voice activity recorded in the last 24 hours.")
-            return
-
-        embed = discord.Embed(title="Voice Channel Logs (Last 24 Hours)", color=discord.Color.purple())
-
-        description_lines = []
-        for log in logs[:20]:  # Limit to 20 most recent entries to keep the embed clean
-            try:
-                member = await ctx.guild.fetch_member(log['user_id'])
-                user_display = member.display_name
-            except discord.NotFound:
-                user_display = f"Unknown User (ID: {log['user_id']})"
-
-            timestamp_str = log['timestamp'].strftime('%H:%M:%S')
-            emoji = '🟢' if log['event_type'] == 'join' else '🔴'
-            action = "joined" if log['event_type'] == 'join' else "left"
-
-            description_lines.append(f"`{timestamp_str}` {emoji} **{user_display}** {action} `#{log['channel_name']}`")
-
-        embed.description = "\n".join(description_lines)
-
-        await ctx.send(embed=embed)
-
 async def setup(bot):
     await bot.add_cog(Statistics(bot))

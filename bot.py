@@ -83,24 +83,8 @@ async def on_message(message):
     # Finally, process any potential commands in the message
     await bot.process_commands(message)
 
-@bot.event
-async def on_voice_state_update(member, before, after):
-    """Tracks voice session durations and logs individual join/leave events."""
-    user_id = member.id
-    guild_id = member.guild.id
-
-    # A user joins a voice channel
-    if not before.channel and after.channel:
-        voice_sessions[user_id] = datetime.utcnow()
-        database.log_voice_event(user_id, guild_id, after.channel.name, 'join')
-
-    # A user leaves a voice channel
-    elif before.channel and not after.channel:
-        if user_id in voice_sessions:
-            join_time = voice_sessions.pop(user_id)
-            leave_time = datetime.utcnow()
-            database.log_voice_session(user_id, guild_id, join_time, leave_time)
-        database.log_voice_event(user_id, guild_id, before.channel.name, 'leave')
+# The on_voice_state_update event is now handled by the AuditLog cog
+# to provide detailed logging and to track session times for statistics.
 
 # --- General Bot Commands ---
 # All commands have been moved to their respective cogs in the 'cogs/' directory.
