@@ -46,15 +46,11 @@ def init_db():
         )
     ''')
 
-    # Table for specific voice join/leave events
+    # Table for general guild settings
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS voice_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            guild_id INTEGER NOT NULL,
-            channel_name TEXT NOT NULL,
-            event_type TEXT NOT NULL, -- 'join' or 'leave'
-            timestamp TIMESTAMP NOT NULL
+        CREATE TABLE IF NOT EXISTS guild_settings (
+            guild_id INTEGER PRIMARY KEY,
+            audit_log_channel_id INTEGER
         )
     ''')
 
@@ -291,30 +287,6 @@ def get_top_active_users(guild_id, limit=10):
     conn.close()
     return top_users
 
-def log_voice_event(user_id, guild_id, channel_name, event_type):
-    """Logs a specific voice channel event (join or leave)."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO voice_events (user_id, guild_id, channel_name, event_type, timestamp) VALUES (?, ?, ?, ?, ?)",
-        (user_id, guild_id, channel_name, event_type, datetime.utcnow())
-    )
-    conn.commit()
-    conn.close()
-
-def get_voice_logs(guild_id):
-    """Retrieves voice event logs from the last 24 hours for a guild."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    twenty_four_hours_ago = datetime.utcnow() - timedelta(hours=24)
-    cursor.execute(
-        "SELECT user_id, channel_name, event_type, timestamp FROM voice_events WHERE guild_id = ? AND timestamp >= ? ORDER BY timestamp DESC",
-        (guild_id, twenty_four_hours_ago)
-    )
-    logs = cursor.fetchall()
-    conn.close()
-    return logs
-
 # --- Auto-Responder Functions ---
 
 def get_ar_config(guild_id):
@@ -377,6 +349,27 @@ def add_ar_keyword(guild_id, keyword_type, keyword):
         return False
     finally:
         conn.close()
+
+# --- Guild Settings Functions ---
+
+def get_guild_settings(guild_id):
+    """Gets all settings for a specific guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("INSERT OR IGNORE INTO guild_settings (guild_id) VALUES (?)", (guild_id,))
+    conn.commit()
+    cursor.execute("SELECT * FROM guild_settings WHERE guild_id = ?", (guild_id,))
+    settings = cursor.fetchone()
+    conn.close()
+    return settings
+
+def set_audit_log_channel(guild_id, channel_id):
+    """Sets the audit log channel for a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE guild_settings SET audit_log_channel_id = ? WHERE guild_id = ?", (channel_id, guild_id))
+    conn.commit()
+    conn.close()
 
 # --- Economy System Functions ---
 

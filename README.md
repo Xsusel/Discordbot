@@ -11,6 +11,7 @@ This project provides a Discord bot with a web dashboard that can be easily depl
 -   **Music Playback**: Play music from YouTube by providing a URL or search query.
 -   **Auto-Responder**: Automatically replies to questions about settings, directing users to a designated channel.
 -   **Economy System**: A server-wide currency system where users earn currency for activity and can spend it in a role shop or gamble it.
+-   **Comprehensive Audit Log**: Logs important server events to a designated channel.
 -   **Dockerized**: Runs both the bot and the web server in a single container.
 
 ## Prerequisites
@@ -46,6 +47,7 @@ Before you can run the project, you need to create a Discord bot application and
     -   `Kick Members` (for the warning system)
     -   `Ban Members` (for the warning system)
     -   `Manage Roles` (for the economy shop)
+    -   `View Audit Log` (to identify who performed actions like deleting messages)
 4.  Scroll down and copy the **generated URL**.
 5.  Paste the URL into your browser, select the server you want to add the bot to, and click **"Authorize"**.
 
@@ -96,9 +98,15 @@ docker build -t discord-bot . && docker run --env-file bot.env -d -p 8080:8080 -
 
 -   `$dashboard`: The bot will reply with a link to the web dashboard for the current server.
 
--   `$voicelogs`: Shows a log of users joining and leaving voice channels in the last 24 hours.
-
 -   `$debug`: Runs and displays a report of diagnostic checks, such as the status of the YouTube cookie file.
+
+## Audit Log System
+
+The bot can log important server events to a designated channel to help moderators keep track of activity.
+
+-   **Logged Events**: Member Joins/Leaves, Message Deletes, Role Updates, and Voice Channel activity.
+-   **Configuration**:
+    -   `$setlogchannel <#channel>`: Sets the channel where all audit logs will be sent. This command is for administrators only.
 
 ## Moderation Commands
 
