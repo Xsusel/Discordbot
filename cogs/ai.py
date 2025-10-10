@@ -10,13 +10,23 @@ logger = logging.getLogger(__name__)
 class AI(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.model = None
         self.api_key = os.getenv("GEMINI_API_KEY")
         if self.api_key and self.api_key != "YOUR_GEMINI_API_KEY":
-            genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-pro')
-            logger.info("Gemini AI cog loaded and configured.")
+            try:
+                genai.configure(api_key=self.api_key)
+                self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+                logger.info("Gemini AI cog loaded and configured with model 'gemini-1.5-flash-latest'.")
+
+                # Log available models for debugging purposes
+                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+                logger.info(f"Available Gemini models supporting 'generateContent': {models}")
+
+            except Exception as e:
+                logger.error(f"Failed to configure Gemini or list models: {e}")
+                logger.error(traceback.format_exc())
+                self.model = None
         else:
-            self.model = None
             logger.warning("Gemini API key not found or is set to the default placeholder. AI cog will be disabled.")
 
     async def get_ai_response(self, message_content: str):
