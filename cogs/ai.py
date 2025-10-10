@@ -20,8 +20,14 @@ class AI(commands.Cog):
             return None
 
         try:
-            response = self.model.generate_content(message_content)
+            # Use the asynchronous method to avoid blocking the bot
+            response = await self.model.generate_content_async(message_content)
+
+            # The .text property will raise a ValueError if the response is blocked by safety filters.
             return response.text
+        except ValueError:
+            # This handles cases where the response is blocked.
+            return "I am sorry, but my safety filters prevent me from responding to that."
         except Exception as e:
             print(f"Error getting AI response: {e}")
             return "Sorry, I encountered an error while processing your request."
