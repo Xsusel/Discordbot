@@ -15,8 +15,8 @@ class AI(commands.Cog):
         if self.api_key and self.api_key != "YOUR_GEMINI_API_KEY":
             try:
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
-                logger.info("Gemini AI cog loaded and configured with model 'gemini-1.5-flash-latest'.")
+                self.model = genai.GenerativeModel('gemini-1.0-pro')
+                logger.info("Gemini AI cog loaded and configured with model 'gemini-1.0-pro'.")
 
                 # Log available models for debugging purposes
                 models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
