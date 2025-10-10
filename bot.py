@@ -5,7 +5,11 @@ import database
 from datetime import datetime
 import webapp
 import threading
+import logging
 from dotenv import load_dotenv
+
+# --- Logging Setup ---
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 load_dotenv('bot.env')
 
