@@ -5,6 +5,9 @@ import database
 from datetime import datetime
 import webapp
 import threading
+from dotenv import load_dotenv
+
+load_dotenv('bot.env')
 
 # --- Bot Setup ---
 # Define the intents required for the bot's functionality
@@ -67,20 +70,33 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    """Called for every message. Logs messages, checks for auto-responses, and processes commands."""
+    """Called for every message. Logs messages, checks for AI, auto-responses, and processes commands."""
     if message.author.bot:
         return
 
-    # First, log the message for statistics
+    # Log the message for statistics
     if message.guild:
         database.log_message(message.author.id, message.guild.id)
 
-    # Then, check if the auto-responder cog should handle this message
+    # Check if the bot was mentioned for an AI response
+    if bot.user.mentioned_in(message) and not message.mention_everyone:
+        ai_cog = bot.get_cog('AI')
+        if ai_cog and ai_cog.model:
+            # Clean the message content of the bot's mention
+            question = message.content.replace(f'<@!{bot.user.id}>', '').replace(f'<@{bot.user.id}>', '').strip()
+            if question:
+                async with message.channel.typing():
+                    response = await ai_cog.get_ai_response(question)
+                    if response:
+                        await message.reply(response)
+                return # Stop further processing to avoid command conflicts
+
+    # Check if the auto-responder cog should handle this message
     auto_responder_cog = bot.get_cog('AutoResponder')
     if auto_responder_cog:
         await auto_responder_cog.check_for_response(message)
 
-    # Finally, process any potential commands in the message
+    # Process any potential commands in the message
     await bot.process_commands(message)
 
 # The on_voice_state_update event is now handled by the AuditLog cog
