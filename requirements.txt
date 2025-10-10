@@ -3,3 +3,5 @@ Flask
 matplotlib
 yt-dlp
 PyNaCl
+google-generativeai
+python-dotenv
