@@ -16,8 +16,8 @@ class AI(commands.Cog):
             try:
                 genai.configure(api_key=self.api_key)
                 # Use the full model name provided by the diagnostic script
-                self.model = genai.GenerativeModel('models/gemini-pro-latest')
-                logger.info("Gemini AI cog loaded and configured with model 'models/gemini-pro-latest'.")
+                self.model = genai.GenerativeModel('models/gemini-flash-lite-latest')
+                logger.info("Gemini AI cog loaded and configured with model 'models/gemini-flash-lite-latest'.")
             except Exception as e:
                 logger.error(f"Failed to configure Gemini: {e}")
                 logger.error(traceback.format_exc())
