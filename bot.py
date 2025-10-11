@@ -90,10 +90,13 @@ async def on_message(message):
             question = message.content.replace(f'<@!{bot.user.id}>', '').replace(f'<@{bot.user.id}>', '').strip()
             if question:
                 async with message.channel.typing():
-                    response = await ai_cog.get_ai_response(question)
-                    if response:
-                        await message.reply(response)
-                return # Stop further processing to avoid command conflicts
+                    response_text = await ai_cog.get_ai_response(question)
+                    if response_text:
+                        # Split the response into chunks of 2000 characters
+                        for i in range(0, len(response_text), 2000):
+                            chunk = response_text[i:i+2000]
+                            await message.reply(chunk)
+                return  # Stop further processing to avoid command conflicts
 
     # Check if the auto-responder cog should handle this message
     auto_responder_cog = bot.get_cog('AutoResponder')
