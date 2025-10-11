@@ -15,15 +15,11 @@ class AI(commands.Cog):
         if self.api_key and self.api_key != "YOUR_GEMINI_API_KEY":
             try:
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-pro')
-                logger.info("Gemini AI cog loaded and configured with model 'gemini-pro'.")
-
-                # Log available models for debugging purposes
-                models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-                logger.info(f"Available Gemini models supporting 'generateContent': {models}")
-
+                # Use the full model name provided by the diagnostic script
+                self.model = genai.GenerativeModel('models/gemini-pro-latest')
+                logger.info("Gemini AI cog loaded and configured with model 'models/gemini-pro-latest'.")
             except Exception as e:
-                logger.error(f"Failed to configure Gemini or list models: {e}")
+                logger.error(f"Failed to configure Gemini: {e}")
                 logger.error(traceback.format_exc())
                 self.model = None
         else:
