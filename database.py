@@ -149,6 +149,19 @@ def init_db():
         )
     ''')
 
+    # Table for monthly leaderboard history
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS monthly_leaderboard_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            guild_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            points INTEGER NOT NULL,
+            month INTEGER NOT NULL,
+            year INTEGER NOT NULL,
+            UNIQUE(guild_id, user_id, month, year)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
@@ -529,6 +542,38 @@ def remove_shop_item(item_id):
     conn.commit()
     conn.close()
     return changes > 0
+
+# --- Points System Functions ---
+
+def award_points(guild_id, user_id, points):
+    """Awards points to a user."""
+    return update_wallet_balance(guild_id, user_id, points)
+
+def get_monthly_leaderboard(guild_id, limit=10):
+    """Gets the top N users with the most points in a guild."""
+    return get_top_balances(guild_id, limit)
+
+def archive_monthly_leaderboard(guild_id):
+    """Archives the current monthly leaderboard and resets points."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    leaderboard = get_top_balances(guild_id, limit=100) # Archive more than just the top 10
+    now = datetime.utcnow()
+    month = now.month
+    year = now.year
+
+    for user in leaderboard:
+        cursor.execute(
+            "INSERT OR IGNORE INTO monthly_leaderboard_history (guild_id, user_id, points, month, year) VALUES (?, ?, ?, ?, ?)",
+            (guild_id, user['user_id'], user['balance'], month, year)
+        )
+
+    # Reset all balances for the guild
+    cursor.execute("UPDATE economy_wallets SET balance = 0 WHERE guild_id = ?", (guild_id,))
+
+    conn.commit()
+    conn.close()
 
 def get_activity_scores_since(guild_id, since_timestamp):
     """Calculates activity scores for all users since a given timestamp."""
