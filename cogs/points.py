@@ -22,7 +22,7 @@ class Points(commands.Cog):
     async def on_message(self, message):
         if message.author.bot or not message.guild:
             return
-        database.award_points(message.guild.id, message.author.id, 1)
+        database.add_points(message.guild.id, message.author.id, 1)
 
     @tasks.loop(minutes=10)
     async def voice_activity_check(self):
@@ -32,7 +32,7 @@ class Points(commands.Cog):
                 active_users = [m for m in vc.members if not m.voice.self_mute and not m.voice.self_deaf]
                 if len(active_users) > 1:
                     for member in active_users:
-                        database.award_points(guild.id, member.id, 25)
+                        database.add_points(guild.id, member.id, 25)
                         logger.info(f"Awarded 25 points to {member.display_name} in {guild.name} for voice activity.")
 
     @voice_activity_check.before_loop
@@ -44,7 +44,7 @@ class Points(commands.Cog):
         if not ctx.guild:
             return
 
-        leaderboard_data = database.get_monthly_leaderboard(ctx.guild.id)
+        leaderboard_data = database.get_points_leaderboard(ctx.guild.id)
 
         embed = discord.Embed(title="Monthly Points Leaderboard", color=discord.Color.gold())
 
@@ -58,7 +58,7 @@ class Points(commands.Cog):
                     display_name = member.display_name
                 except discord.NotFound:
                     display_name = f"Unknown User (ID: {row['user_id']})"
-                leaderboard_list.append(f"**{i+1}. {display_name}**: {row['balance']} points")
+                leaderboard_list.append(f"**{i+1}. {display_name}**: {row['points']} points")
             embed.description = "\n".join(leaderboard_list)
 
         await ctx.send(embed=embed)
