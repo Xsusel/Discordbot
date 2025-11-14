@@ -554,6 +554,22 @@ def remove_shop_item(item_id):
     conn.close()
     return changes > 0
 
+def clear_message_stats(guild_id):
+    """Clears all message statistics for a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM messages WHERE guild_id = ?", (guild_id,))
+    conn.commit()
+    conn.close()
+
+def clear_voice_stats(guild_id):
+    """Clears all voice session statistics for a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM voice_sessions WHERE guild_id = ?", (guild_id,))
+    conn.commit()
+    conn.close()
+
 # --- Points System Functions ---
 
 def add_points(guild_id, user_id, points):
