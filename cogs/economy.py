@@ -6,42 +6,20 @@ from datetime import datetime, timedelta
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.last_payout = datetime.utcnow()
-        self.award_currency_task.start()
-        print("Economy cog loaded and earning task started.")
+        self.sync_gambling_points_task.start()
+        print("Economy cog loaded and points sync task started.")
 
     def cog_unload(self):
-        self.award_currency_task.cancel()
+        self.sync_gambling_points_task.cancel()
 
-    @tasks.loop(minutes=10)
-    async def award_currency_task(self):
-        """Periodically awards currency to users based on their activity."""
-        print(f"Running activity payout task... Last payout was at {self.last_payout.strftime('%Y-%m-%d %H:%M:%S')}")
-
-        # We need to iterate over all guilds the bot is in
+    @tasks.loop(minutes=1)
+    async def sync_gambling_points_task(self):
+        """Periodically syncs gambling points with activity points for all users."""
         for guild in self.bot.guilds:
-            # Get activity scores for all users since the last payout
-            activity_scores = database.get_activity_scores_since(guild.id, self.last_payout)
+            database.sync_all_wallets_with_points(guild.id)
 
-            if not activity_scores:
-                continue
-
-            print(f"Found {len(activity_scores)} active user(s) in {guild.name} to reward.")
-            for user_activity in activity_scores:
-                user_id = user_activity['user_id']
-                # Award currency based on activity score. Let's say 1 activity point = 10 currency.
-                # This can be made configurable later if needed.
-                amount_to_award = int(user_activity['activity_score'] * 10)
-
-                if amount_to_award > 0:
-                    database.update_wallet_balance(guild.id, user_id, amount_to_award)
-                    print(f"Awarded {amount_to_award} currency to user {user_id} in guild {guild.id}.")
-
-        # Update the last payout time for the next run
-        self.last_payout = datetime.utcnow()
-
-    @award_currency_task.before_loop
-    async def before_award_currency_task(self):
+    @sync_gambling_points_task.before_loop
+    async def before_sync_gambling_points_task(self):
         await self.bot.wait_until_ready()
 
     # --- User-Facing Economy Commands ---
@@ -49,6 +27,8 @@ class Economy(commands.Cog):
     async def balance(self, ctx, member: discord.Member = None):
         """Checks your or another user's currency balance."""
         member = member or ctx.author
+        # Sync before checking balance to ensure it's up-to-date
+        database.sync_user_wallet(ctx.guild.id, member.id)
         balance = database.get_wallet_balance(ctx.guild.id, member.id)
         settings = database.get_economy_settings(ctx.guild.id)
         currency_name = settings['currency_name']
@@ -57,6 +37,8 @@ class Economy(commands.Cog):
     @commands.command(name='top', aliases=['leaderboard'])
     async def top(self, ctx):
         """Displays the leaderboard of the richest users."""
+        # Sync all wallets before showing the leaderboard
+        database.sync_all_wallets_with_points(ctx.guild.id)
         top_users = database.get_top_balances(ctx.guild.id, 10)
         settings = database.get_economy_settings(ctx.guild.id)
         currency_name = settings['currency_name']
@@ -99,6 +81,8 @@ class Economy(commands.Cog):
     @commands.command(name='buy')
     async def buy(self, ctx, item_id: int):
         """Buys an item (role) from the shop."""
+        # Sync before buying to ensure balance is up-to-date
+        database.sync_user_wallet(ctx.guild.id, ctx.author.id)
         item = database.get_shop_item(item_id)
         if not item or item['guild_id'] != ctx.guild.id:
             await ctx.send("❌ That item ID is not valid.")
@@ -136,6 +120,8 @@ class Economy(commands.Cog):
             await ctx.send("❌ You must bet a positive amount.")
             return
 
+        # Sync before betting to ensure balance is up-to-date
+        database.sync_user_wallet(ctx.guild.id, ctx.author.id)
         balance = database.get_wallet_balance(ctx.guild.id, ctx.author.id)
         if amount > balance:
             await ctx.send("❌ You cannot bet more than you have.")

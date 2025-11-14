@@ -554,6 +554,38 @@ def remove_shop_item(item_id):
     conn.close()
     return changes > 0
 
+def sync_all_wallets_with_points(guild_id):
+    """Sets the wallet balance for all users to be twice their activity points."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # This query ensures that every user with points has a wallet, and then updates the balance.
+    cursor.execute("""
+        INSERT INTO economy_wallets (guild_id, user_id, balance)
+        SELECT guild_id, user_id, points * 2
+        FROM user_points
+        WHERE guild_id = ?
+        ON CONFLICT(guild_id, user_id) DO UPDATE SET
+        balance = excluded.balance
+    """, (guild_id,))
+    conn.commit()
+    conn.close()
+
+def sync_user_wallet(guild_id, user_id):
+    """Sets a specific user's wallet balance to be twice their activity points."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Get the user's current activity points
+    cursor.execute("SELECT points FROM user_points WHERE guild_id = ? AND user_id = ?", (guild_id, user_id))
+    result = cursor.fetchone()
+    points = result['points'] if result else 0
+    # Set the wallet balance to twice the points
+    cursor.execute(
+        "INSERT OR REPLACE INTO economy_wallets (guild_id, user_id, balance) VALUES (?, ?, ?)",
+        (guild_id, user_id, points * 2)
+    )
+    conn.commit()
+    conn.close()
+
 def clear_message_stats(guild_id):
     """Clears all message statistics for a guild."""
     conn = get_db_connection()
