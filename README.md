@@ -76,7 +76,7 @@ docker build -t discord-bot . && docker run --env-file bot.env -d -p 8080:8080 -
 
 ### User Commands
 
--   `$top`: Shows the leaderboard for the most active users (Activity Points).
+-   `$top [monthly]`: Shows the leaderboard for the most active users (Activity Points). Use `monthly` to see this month's leaderboard.
 -   `$wallet`: Shows the leaderboard for the richest users (Gambling Points).
 -   `$balance [@user]`: Checks your or another user's Gambling Points balance.
 -   `$bet <amount>`: Bets a certain amount of your Gambling Points.
