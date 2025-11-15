@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands, tasks
 import os
 import database
-# import webapp
-import threading
 import logging
 from dotenv import load_dotenv
 
@@ -18,7 +16,35 @@ intents.message_content = True
 intents.voice_states = True
 intents.members = True
 
-bot = commands.Bot(command_prefix='$', intents=intents)
+class MyBot(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix='$', intents=intents)
+
+    async def on_ready(self):
+        """Called when the bot is ready and connected to Discord."""
+        logging.info(f'Logged in as {self.user}')
+        database.init_db()
+        logging.info("Database initialized.")
+
+        # Load the new core cog
+        try:
+            await self.load_extension('cogs.core')
+            logging.info('Loaded cog: core.py')
+        except Exception as e:
+            logging.error(f'Failed to load cog core.py: {e}')
+
+        # Sync slash commands
+        try:
+            synced = await self.tree.sync()
+            logging.info(f"Synced {len(synced)} slash commands.")
+        except Exception as e:
+            logging.error(f"Failed to sync slash commands: {e}")
+
+        # Start the daily background task
+        if not daily_member_count_task.is_running():
+            daily_member_count_task.start()
+
+bot = MyBot()
 
 # --- Background Tasks ---
 @tasks.loop(hours=24)
@@ -36,40 +62,6 @@ async def daily_member_count_task():
 @daily_member_count_task.before_loop
 async def before_daily_task():
     await bot.wait_until_ready()
-
-# --- Core Events ---
-@bot.event
-async def on_ready():
-    """Called when the bot is ready and connected to Discord."""
-    logging.info(f'Logged in as {bot.user}')
-    database.init_db()
-    logging.info("Database initialized.")
-
-    # Load the new core cog
-    try:
-        await bot.load_extension('cogs.core')
-        logging.info('Loaded cog: core.py')
-    except Exception as e:
-        logging.error(f'Failed to load cog core.py: {e}')
-
-    # Start the web server in a background thread
-    # webapp.set_bot_client(bot)
-    # web_thread = threading.Thread(target=webapp.run_webapp)
-    # web_thread.daemon = True
-    # web_thread.start()
-    # logging.info("Web server started.")
-
-    # Start the daily background task
-    if not daily_member_count_task.is_running():
-        daily_member_count_task.start()
-
-@bot.event
-async def on_message(message):
-    """Called for every message. The core cog now handles point logic."""
-    if message.author.bot:
-        return
-    # This is still needed to trigger the on_message listener in the cog.
-    await bot.process_commands(message)
 
 # --- Run the Bot ---
 if __name__ == "__main__":

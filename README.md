@@ -1,16 +1,14 @@
-# Discord Bot z panelem internetowym w Dockerze
+# Discord Bot w Dockerze
 
-Ten projekt dostarcza uproszczonego, solidnego bota Discord z panelem internetowym, możliwego do wdrożenia za pomocą Dockera. Bot koncentruje się na podstawowych funkcjach, takich jak śledzenie aktywności użytkowników i prosty system ekonomii, przebudowany od podstaw w celu zapewnienia stabilności i łatwości użytkowania.
+Ten projekt dostarcza uproszczonego, solidnego bota Discord, możliwego do wdrożenia za pomocą Dockera. Bot koncentruje się na podstawowych funkcjach, takich jak śledzenie aktywności użytkowników i prosty system ekonomii, przebudowany od podstaw w celu zapewnienia stabilności i łatwości użytkowania.
 
 ## Funkcje
 
 -   **Zunifikowany system punktów**: Śledzi dwa rodzaje punktów:
     -   **Punkty Aktywności (AP)**: Zdobywane za wysyłanie wiadomości i aktywność głosową. Używane do tworzenia rankingu aktywności.
     -   **Punkty Hazardu (GP)**: Używane jako waluta do obstawiania i kupowania ról w sklepie.
--   **Codzienne liczenie członków**: Codziennie zapisuje liczbę członków serwera.
--   **Panel internetowy**: Strona internetowa do wizualizacji statystyk serwera, zawierająca wykres liczby członków i ranking najbardziej aktywnych użytkowników.
 -   **Prosta ekonomia**: Obstawiaj swoje Punkty Hazardu lub wydawaj je w sklepie z rolami na serwerze.
--   **Skonteneryzowany**: Uruchamia zarówno bota, jak i serwer internetowy w jednym kontenerze, co ułatwia wdrożenie.
+-   **Skonteneryzowany**: Uruchamia bota w kontenerze, co ułatwia wdrożenie.
 
 ## Wymagania wstępne
 
@@ -32,7 +30,7 @@ Ten projekt dostarcza uproszczonego, solidnego bota Discord z panelem internetow
 
 ### 3. Zaproś bota na swój serwer
 1.  Przejdź do zakładki **"OAuth2"**, a następnie **"URL Generator"**.
-2.  W **"SCOPES"** zaznacz pole `bot`.
+2.  W **"SCOPES"** zaznacz pole `bot` i `applications.commands`.
 3.  W **"BOT PERMISSIONS"** zaznacz następujące uprawnienia:
     -   `Send Messages`
     -   `Read Message History`
@@ -62,40 +60,28 @@ Ten projekt dostarcza uproszczonego, solidnego bota Discord z panelem internetow
 Zbuduj i uruchom kontener Dockera za pomocą tej komendy:
 
 ```bash
-docker build -t discord-bot . && docker run --env-file bot.env -d -p 8080:8080 --name my-discord-bot discord-bot
+docker build -t discord-bot . && docker run --env-file bot.env -d --name my-discord-bot discord-bot
 ```
-
--   `docker build -t discord-bot .`: Buduje obraz Dockera.
--   `docker run ...`: Uruchamia kontener.
-    -   `--env-file bot.env`: Ładuje twój sekretny token.
-    -   `-d`: Uruchamia w trybie odłączonym.
-    -   `-p 8080:8080`: Mapuje port 8080 kontenera na port 8080 twojego hosta.
-    -   `--name my-discord-bot`: Nadaje kontenerowi wygodną nazwę.
 
 ## Komendy bota
 
+Wszystkie komendy są teraz komendami slash (/).
+
 ### Komendy użytkownika
 
--   `$top [monthly]`: Pokazuje ranking najbardziej aktywnych użytkowników (Punkty Aktywności). Użyj `monthly`, aby zobaczyć ranking z tego miesiąca.
--   `$wallet`: Pokazuje ranking najbogatszych użytkowników (Punkty Hazardu).
--   `$balance [@użytkownik]`: Sprawdza twoje lub innego użytkownika saldo Punktów Hazardu.
--   `$bet <kwota>`: Obstawia określoną ilość twoich Punktów Hazardu.
--   `$shop`: Wyświetla role dostępne do zakupu za Punkty Hazardu.
--   `$buy <id_przedmiotu>`: Kupuje rolę ze sklepu.
--   `$dashboard`: Udostępnia link do panelu internetowego dla serwera.
+-   `/top [period]`: Pokazuje ranking najbardziej aktywnych użytkowników (Punkty Aktywności). Użyj `monthly`, aby zobaczyć ranking z tego miesiąca.
+-   `/wallet`: Pokazuje ranking najbogatszych użytkowników (Punkty Hazardu).
+-   `/balance [member]`: Sprawdza twoje lub innego użytkownika saldo Punktów Hazardu.
+-   `/bet <amount>`: Obstawia określoną ilość twoich Punktów Hazardu.
+-   `/shop`: Wyświetla role dostępne do zakupu za Punkty Hazardu.
+-   `/buy <item_id>`: Kupuje rolę ze sklepu.
 
 ### Komendy administratora
 
--   `$givepoints <@użytkownik> <kwota>`: Daje użytkownikowi określoną ilość Punktów Hazardu.
--   `$takepoints <@użytkownik> <kwota>`: Zabiera użytkownikowi określoną ilość Punktów Hazardu.
--   `$shopadmin add <@rola> <cena>`: Dodaje rolę do sklepu.
--   `$shopadmin remove <id_przedmiotu>`: Usuwa rolę ze sklepu na podstawie jej ID.
-
-## Panel internetowy
-
-Dostęp do panelu internetowego można uzyskać za pomocą komendy `$dashboard` na swoim serwerze. Panel wyświetla:
--   Wykres liczby członków serwera w czasie.
--   Ranking 10 najbardziej aktywnych użytkowników na podstawie ich Punktów Aktywności.
+-   `/givepoints <member> <amount>`: Daje użytkownikowi określoną ilość Punktów Hazardu.
+-   `/takepoints <member> <amount>`: Zabiera użytkownikowi określoną ilość Punktów Hazardu.
+-   `/shopadmin add <role> <price>`: Dodaje rolę do sklepu.
+-   `/shopadmin remove <item_id>`: Usuwa rolę ze sklepu na podstawie jej ID.
 
 ## Zatrzymywanie bota
 
