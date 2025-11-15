@@ -1,105 +1,105 @@
-# Discord Bot with Web Dashboard in Docker
+# Discord Bot z panelem internetowym w Dockerze
 
-This project provides a simplified, robust Discord bot with a web dashboard, deployable via Docker. The bot focuses on core features like user activity tracking and a simple economy system, rebuilt from the ground up for stability and ease of use.
+Ten projekt dostarcza uproszczonego, solidnego bota Discord z panelem internetowym, możliwego do wdrożenia za pomocą Dockera. Bot koncentruje się na podstawowych funkcjach, takich jak śledzenie aktywności użytkowników i prosty system ekonomii, przebudowany od podstaw w celu zapewnienia stabilności i łatwości użytkowania.
 
-## Features
+## Funkcje
 
--   **Unified Point System**: Tracks two types of points:
-    -   **Activity Points (AP)**: Earned for messaging and voice activity. Used for the activity leaderboard.
-    -   **Gambling Points (GP)**: Used as a currency for betting and buying roles in the shop.
--   **Daily Member Count**: Logs the server's member count each day.
--   **Web Dashboard**: A web page to visualize server statistics, including a member count graph and a leaderboard of the most active users.
--   **Simple Economy**: Bet your Gambling Points or spend them in a server-specific role shop.
--   **Dockerized**: Runs both the bot and the web server in a single container for easy deployment.
+-   **Zunifikowany system punktów**: Śledzi dwa rodzaje punktów:
+    -   **Punkty Aktywności (AP)**: Zdobywane za wysyłanie wiadomości i aktywność głosową. Używane do tworzenia rankingu aktywności.
+    -   **Punkty Hazardu (GP)**: Używane jako waluta do obstawiania i kupowania ról w sklepie.
+-   **Codzienne liczenie członków**: Codziennie zapisuje liczbę członków serwera.
+-   **Panel internetowy**: Strona internetowa do wizualizacji statystyk serwera, zawierająca wykres liczby członków i ranking najbardziej aktywnych użytkowników.
+-   **Prosta ekonomia**: Obstawiaj swoje Punkty Hazardu lub wydawaj je w sklepie z rolami na serwerze.
+-   **Skonteneryzowany**: Uruchamia zarówno bota, jak i serwer internetowy w jednym kontenerze, co ułatwia wdrożenie.
 
-## Prerequisites
+## Wymagania wstępne
 
--   [Docker](https://docs.docker.com/get-docker/) must be installed on your system.
+-   Na twoim systemie musi być zainstalowany [Docker](https://docs.docker.com/get-docker/).
 
-## Bot Setup and Invitation
+## Konfiguracja i zaproszenie bota
 
-### 1. Create the Bot Application
-1.  Go to the [Discord Developer Portal](https://discord.com/developers/applications).
-2.  Click **"New Application"**, give it a name, and click **"Create"**.
-3.  Navigate to the **"Bot"** tab.
-4.  Under "Privileged Gateway Intents", enable:
+### 1. Utwórz aplikację bota
+1.  Przejdź do [Portalu deweloperów Discorda](https://discord.com/developers/applications).
+2.  Kliknij **"New Application"**, nadaj jej nazwę i kliknij **"Create"**.
+3.  Przejdź do zakładki **"Bot"**.
+4.  W sekcji "Privileged Gateway Intents" włącz:
     -   **SERVER MEMBERS INTENT**
     -   **MESSAGE CONTENT INTENT**
-5.  Click **"Save Changes"**.
+5.  Kliknij **"Save Changes"**.
 
-### 2. Get the Bot Token
--   On the **"Bot"** tab, click **"Reset Token"** to get your bot's token. **Treat this like a password and keep it secret.**
+### 2. Zdobądź token bota
+-   W zakładce **"Bot"** kliknij **"Reset Token"**, aby uzyskać token bota. **Traktuj go jak hasło i trzymaj w tajemnicy.**
 
-### 3. Invite the Bot to Your Server
-1.  Go to the **"OAuth2"** tab and then **"URL Generator"**.
-2.  In **"SCOPES"**, check the `bot` box.
-3.  In **"BOT PERMISSIONS"**, check the following:
+### 3. Zaproś bota na swój serwer
+1.  Przejdź do zakładki **"OAuth2"**, a następnie **"URL Generator"**.
+2.  W **"SCOPES"** zaznacz pole `bot`.
+3.  W **"BOT PERMISSIONS"** zaznacz następujące uprawnienia:
     -   `Send Messages`
     -   `Read Message History`
     -   `Embed Links`
     -   `Connect`
     -   `Speak`
-    -   `Manage Roles` (for the role shop)
-4.  Copy the generated URL and paste it into your browser to invite the bot to your server.
+    -   `Manage Roles` (dla sklepu z rolami)
+4.  Skopiuj wygenerowany adres URL i wklej go w przeglądarce, aby zaprosić bota na swój serwer.
 
-## Project Setup
+## Konfiguracja projektu
 
-1.  **Clone the repository:**
+1.  **Sklonuj repozytorium:**
     ```bash
-    git clone <repository-url>
-    cd <repository-directory>
+    git clone <adres-repozytorium>
+    cd <katalog-repozytorium>
     ```
-2.  **Create and configure the `bot.env` file:**
-    Create a file named `bot.env` in the root of the project with the following content:
+2.  **Utwórz i skonfiguruj plik `bot.env`:**
+    Utwórz plik o nazwie `bot.env` w głównym katalogu projektu z następującą zawartością:
     ```
-    # Your bot's secret token from the Discord Developer Portal
-    DISCORD_TOKEN=YOUR_DISCORD_BOT_TOKEN
+    # Sekretny token twojego bota z Portalu deweloperów Discorda
+    DISCORD_TOKEN=TWÓJ_TOKEN_BOTA_DISCORD
     ```
-    Replace `YOUR_DISCORD_BOT_TOKEN` with your actual token.
+    Zastąp `TWÓJ_TOKEN_BOTA_DISCORD` swoim rzeczywistym tokenem.
 
-## Running the Bot
+## Uruchamianie bota
 
-Build and run the Docker container with this command:
+Zbuduj i uruchom kontener Dockera za pomocą tej komendy:
 
 ```bash
 docker build -t discord-bot . && docker run --env-file bot.env -d -p 8080:8080 --name my-discord-bot discord-bot
 ```
 
--   `docker build -t discord-bot .`: Builds the Docker image.
--   `docker run ...`: Runs the container.
-    -   `--env-file bot.env`: Loads your secret token.
-    -   `-d`: Runs in detached mode.
-    -   `-p 8080:8080`: Maps the container's port 8080 to your host's port 8080.
-    -   `--name my-discord-bot`: Gives the container a convenient name.
+-   `docker build -t discord-bot .`: Buduje obraz Dockera.
+-   `docker run ...`: Uruchamia kontener.
+    -   `--env-file bot.env`: Ładuje twój sekretny token.
+    -   `-d`: Uruchamia w trybie odłączonym.
+    -   `-p 8080:8080`: Mapuje port 8080 kontenera na port 8080 twojego hosta.
+    -   `--name my-discord-bot`: Nadaje kontenerowi wygodną nazwę.
 
-## Bot Commands
+## Komendy bota
 
-### User Commands
+### Komendy użytkownika
 
--   `$top [monthly]`: Shows the leaderboard for the most active users (Activity Points). Use `monthly` to see this month's leaderboard.
--   `$wallet`: Shows the leaderboard for the richest users (Gambling Points).
--   `$balance [@user]`: Checks your or another user's Gambling Points balance.
--   `$bet <amount>`: Bets a certain amount of your Gambling Points.
--   `$shop`: Displays the roles available for purchase with Gambling Points.
--   `$buy <item_id>`: Buys a role from the shop.
--   `$dashboard`: Provides a link to the web dashboard for the server.
+-   `$top [monthly]`: Pokazuje ranking najbardziej aktywnych użytkowników (Punkty Aktywności). Użyj `monthly`, aby zobaczyć ranking z tego miesiąca.
+-   `$wallet`: Pokazuje ranking najbogatszych użytkowników (Punkty Hazardu).
+-   `$balance [@użytkownik]`: Sprawdza twoje lub innego użytkownika saldo Punktów Hazardu.
+-   `$bet <kwota>`: Obstawia określoną ilość twoich Punktów Hazardu.
+-   `$shop`: Wyświetla role dostępne do zakupu za Punkty Hazardu.
+-   `$buy <id_przedmiotu>`: Kupuje rolę ze sklepu.
+-   `$dashboard`: Udostępnia link do panelu internetowego dla serwera.
 
-### Admin Commands
+### Komendy administratora
 
--   `$givepoints <@user> <amount>`: Gives a user a specified amount of Gambling Points.
--   `$takepoints <@user> <amount>`: Takes a specified amount of Gambling Points from a user.
--   `$shopadmin add <@role> <price>`: Adds a role to the shop.
--   `$shopadmin remove <item_id>`: Removes a role from the shop by its ID.
+-   `$givepoints <@użytkownik> <kwota>`: Daje użytkownikowi określoną ilość Punktów Hazardu.
+-   `$takepoints <@użytkownik> <kwota>`: Zabiera użytkownikowi określoną ilość Punktów Hazardu.
+-   `$shopadmin add <@rola> <cena>`: Dodaje rolę do sklepu.
+-   `$shopadmin remove <id_przedmiotu>`: Usuwa rolę ze sklepu na podstawie jej ID.
 
-## Web Dashboard
+## Panel internetowy
 
-Access the web dashboard by using the `$dashboard` command in your server. The dashboard displays:
--   A graph of the server's member count over time.
--   A leaderboard of the top 10 most active users based on their Activity Points.
+Dostęp do panelu internetowego można uzyskać za pomocą komendy `$dashboard` na swoim serwerze. Panel wyświetla:
+-   Wykres liczby członków serwera w czasie.
+-   Ranking 10 najbardziej aktywnych użytkowników na podstawie ich Punktów Aktywności.
 
-## Stopping the Bot
+## Zatrzymywanie bota
 
-To stop and remove the container, run:
+Aby zatrzymać i usunąć kontener, uruchom:
 ```bash
 docker stop my-discord-bot && docker rm my-discord-bot
 ```
