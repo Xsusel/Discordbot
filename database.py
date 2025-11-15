@@ -30,6 +30,7 @@ def init_db():
             user_id INTEGER NOT NULL,
             guild_id INTEGER NOT NULL,
             activity_points INTEGER NOT NULL DEFAULT 0,
+            monthly_activity_points INTEGER NOT NULL DEFAULT 0,
             gambling_points INTEGER NOT NULL DEFAULT 0,
             message_count INTEGER NOT NULL DEFAULT 0,
             voice_seconds INTEGER NOT NULL DEFAULT 0,
@@ -102,11 +103,12 @@ def add_points(guild_id, user_id, activity_points_to_add, gambling_points_to_add
         """
         UPDATE users
         SET activity_points = activity_points + ?,
+            monthly_activity_points = monthly_activity_points + ?,
             gambling_points = gambling_points + ?,
             last_activity_timestamp = ?
         WHERE guild_id = ? AND user_id = ?
         """,
-        (activity_points_to_add, gambling_points_to_add, datetime.utcnow(), guild_id, user_id)
+        (activity_points_to_add, activity_points_to_add, gambling_points_to_add, datetime.utcnow(), guild_id, user_id)
     )
     conn.commit()
     conn.close()
@@ -141,7 +143,7 @@ def update_gambling_points(guild_id, user_id, amount):
 
 def get_leaderboard(guild_id, point_type='activity_points', limit=10):
     """Gets the top users based on a specified point type."""
-    if point_type not in ['activity_points', 'gambling_points']:
+    if point_type not in ['activity_points', 'gambling_points', 'monthly_activity_points']:
         raise ValueError("Invalid point_type specified.")
 
     conn = get_db_connection()
@@ -153,6 +155,14 @@ def get_leaderboard(guild_id, point_type='activity_points', limit=10):
     leaderboard = cursor.fetchall()
     conn.close()
     return leaderboard
+
+def reset_monthly_points(guild_id):
+    """Resets the monthly activity points for all users in a guild."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE users SET monthly_activity_points = 0 WHERE guild_id = ?", (guild_id,))
+    conn.commit()
+    conn.close()
 
 # --- Shop Functions ---
 

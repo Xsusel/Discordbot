@@ -14,10 +14,12 @@ class Core(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.voice_activity_check.start()
-        logging.info("Core cog loaded and voice activity check started.")
+        self.monthly_reset_task.start()
+        logging.info("Core cog loaded and tasks started.")
 
     def cog_unload(self):
         self.voice_activity_check.cancel()
+        self.monthly_reset_task.cancel()
 
     # --- Event Listeners ---
     @commands.Cog.listener()
@@ -54,11 +56,32 @@ class Core(commands.Cog):
     async def before_voice_activity_check(self):
         await self.bot.wait_until_ready()
 
+    @tasks.loop(hours=24)
+    async def monthly_reset_task(self):
+        """Checks daily if it's the first of the month to reset monthly points."""
+        now = datetime.utcnow()
+        if now.day == 1:
+            logging.info(f"It's the first day of the month. Resetting monthly points for all guilds.")
+            for guild in self.bot.guilds:
+                database.reset_monthly_points(guild.id)
+                logging.info(f"Reset monthly points for {guild.name}.")
+
+    @monthly_reset_task.before_loop
+    async def before_monthly_reset_task(self):
+        await self.bot.wait_until_ready()
+
     # --- Leaderboard Commands ---
-    @commands.command(name='top', help='Shows the leaderboard for activity points.')
-    async def top(self, ctx):
-        leaderboard_data = database.get_leaderboard(ctx.guild.id, point_type='activity_points')
-        embed = discord.Embed(title="🏆 Top 10 Most Active Users", color=discord.Color.gold())
+    @commands.command(name='top', help='Shows the leaderboard for activity points. Use `$top monthly` for this month.')
+    async def top(self, ctx, period: str = 'all'):
+        if period == 'monthly':
+            point_type = 'monthly_activity_points'
+            title = "🏆 Top 10 Most Active Users This Month"
+        else:
+            point_type = 'activity_points'
+            title = "🏆 Top 10 Most Active Users (All Time)"
+
+        leaderboard_data = database.get_leaderboard(ctx.guild.id, point_type=point_type)
+        embed = discord.Embed(title=title, color=discord.Color.gold())
         if not leaderboard_data:
             embed.description = "No activity points have been recorded yet."
         else:
@@ -66,7 +89,8 @@ class Core(commands.Cog):
             for i, row in enumerate(leaderboard_data):
                 member = ctx.guild.get_member(row['user_id'])
                 display_name = member.display_name if member else f"Unknown User (ID: {row['user_id']})"
-                leaderboard_list.append(f"**{i+1}. {display_name}**: {row['activity_points']} AP")
+                points = row[point_type]
+                leaderboard_list.append(f"**{i+1}. {display_name}**: {points} AP")
             embed.description = "\n".join(leaderboard_list)
         await ctx.send(embed=embed)
 
