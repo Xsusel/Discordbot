@@ -18,7 +18,7 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS guild_settings (
             guild_id INTEGER PRIMARY KEY,
-            currency_name TEXT NOT NULL DEFAULT 'Points',
+            currency_name TEXT NOT NULL DEFAULT 'Punkty',
             bet_win_chance INTEGER NOT NULL DEFAULT 45,
             shop_enabled INTEGER NOT NULL DEFAULT 1
         )
