@@ -73,6 +73,7 @@ class Core(commands.Cog):
     # --- Leaderboard Commands ---
     @app_commands.command(name='top', description='Pokazuje ranking najbardziej aktywnych użytkowników.')
     @app_commands.describe(period='Okres, za który ma być wyświetlony ranking (monthly lub all)')
+    @app_commands.default_permissions(send_messages=True)
     async def top(self, interaction: discord.Interaction, period: str = 'all'):
         if period == 'monthly':
             point_type = 'monthly_activity_points'
@@ -96,6 +97,7 @@ class Core(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name='wallet', description='Pokazuje ranking najbogatszych użytkowników.')
+    @app_commands.default_permissions(send_messages=True)
     async def wallet(self, interaction: discord.Interaction):
         leaderboard_data = database.get_leaderboard(interaction.guild.id, point_type='gambling_points')
         settings = database.get_guild_settings(interaction.guild.id)
@@ -116,6 +118,7 @@ class Core(commands.Cog):
     # --- Economy Commands ---
     @app_commands.command(name='balance', description='Sprawdza saldo punktów hazardowych.')
     @app_commands.describe(member='Użytkownik, którego saldo chcesz sprawdzić.')
+    @app_commands.default_permissions(send_messages=True)
     async def balance(self, interaction: discord.Interaction, member: discord.Member = None):
         member = member or interaction.user
         user_data = database.get_user_data(interaction.guild.id, member.id)
@@ -126,6 +129,7 @@ class Core(commands.Cog):
 
     @app_commands.command(name='bet', description='Obstawia określoną ilość waluty.')
     @app_commands.describe(amount='Ilość, którą chcesz obstawić.')
+    @app_commands.default_permissions(send_messages=True)
     async def bet(self, interaction: discord.Interaction, amount: int):
         if amount <= 0:
             return await interaction.response.send_message("Musisz obstawić dodatnią kwotę.", ephemeral=True)
@@ -147,6 +151,7 @@ class Core(commands.Cog):
 
     # --- Shop Commands ---
     @app_commands.command(name='shop', description='Wyświetla przedmioty dostępne do zakupu.')
+    @app_commands.default_permissions(send_messages=True)
     async def shop(self, interaction: discord.Interaction):
         items = database.get_shop_items(interaction.guild.id)
         settings = database.get_guild_settings(interaction.guild.id)
@@ -166,6 +171,7 @@ class Core(commands.Cog):
 
     @app_commands.command(name='buy', description='Kupuje przedmiot (rolę) ze sklepu.')
     @app_commands.describe(item_id='ID przedmiotu, który chcesz kupić.')
+    @app_commands.default_permissions(send_messages=True)
     async def buy(self, interaction: discord.Interaction, item_id: int):
         item = database.get_shop_item(item_id)
         if not item or item['guild_id'] != interaction.guild.id:
