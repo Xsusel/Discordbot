@@ -6,3 +6,8 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Ignore the data directory content but keep the folder structure if needed
+data/*.db
+data/*.db-journal
+data/*.db-wal

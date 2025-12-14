@@ -40,9 +40,32 @@ class MyBot(commands.Bot):
         except Exception as e:
             logging.error(f"Failed to sync slash commands: {e}")
 
+        # Register the error handler for the command tree
+        self.tree.on_error = self.on_tree_error
+
         # Start the daily background task
         if not daily_member_count_task.is_running():
             daily_member_count_task.start()
+
+    async def on_tree_error(self, interaction: discord.Interaction, error: discord.app_commands.AppCommandError):
+        """Global error handler for app commands (slash commands)."""
+        if isinstance(error, discord.app_commands.MissingPermissions):
+            await interaction.response.send_message(
+                "❌ Nie masz uprawnień do użycia tej komendy.", ephemeral=True
+            )
+        elif isinstance(error, discord.app_commands.BotMissingPermissions):
+            await interaction.response.send_message(
+                "❌ Bot nie ma wystarczających uprawnień, aby wykonać tę akcję.", ephemeral=True
+            )
+        elif isinstance(error, discord.app_commands.CommandOnCooldown):
+            await interaction.response.send_message(
+                f"⏳ Komenda jest na odnowieniu. Spróbuj ponownie za {error.retry_after:.2f}s.", ephemeral=True
+            )
+        else:
+            logging.error(f"An error occurred in command '{interaction.command.name}': {error}")
+            await interaction.response.send_message(
+                "❌ Wystąpił błąd podczas wykonywania komendy.", ephemeral=True
+            )
 
 bot = MyBot()
 
