@@ -9,6 +9,7 @@ Ten projekt dostarcza uproszczonego, solidnego bota Discord, możliwego do wdro�
     -   **Punkty Hazardu (GP)**: Używane jako waluta do obstawiania i kupowania ról w sklepie.
 -   **Prosta ekonomia**: Obstawiaj swoje Punkty Hazardu lub wydawaj je w sklepie z rolami na serwerze.
 -   **Skonteneryzowany**: Uruchamia bota w kontenerze, co ułatwia wdrożenie.
+-   **Trwałość danych**: Baza danych jest zapisywana w dedykowanym folderze, co ułatwia backupy i zapobiega utracie danych przy restarcie kontenera.
 
 ## Wymagania wstępne
 
@@ -55,17 +56,32 @@ Ten projekt dostarcza uproszczonego, solidnego bota Discord, możliwego do wdro�
     ```
     Zastąp `TWÓJ_TOKEN_BOTA_DISCORD` swoim rzeczywistym tokenem.
 
-## Uruchamianie bota
+## Uruchamianie bota z zapisem danych
 
-Zbuduj i uruchom kontener Dockera za pomocą tej komendy:
+Aby dane (baza danych) nie znikały po restarcie kontenera, musimy zamontować wolumen (folder na twoim serwerze), który będzie połączony z folderem `/app/data` wewnątrz kontenera.
 
+1.  Upewnij się, że jesteś w głównym katalogu projektu.
+2.  Zbuduj i uruchom kontener:
+
+**System Linux/Mac:**
 ```bash
-docker build -t discord-bot . && docker run --env-file bot.env -d --name my-discord-bot discord-bot
+docker build -t discord-bot . && \
+docker run --env-file bot.env -d \
+  -v $(pwd)/data:/app/data \
+  --name my-discord-bot discord-bot
 ```
+
+**System Windows (PowerShell):**
+```powershell
+docker build -t discord-bot .
+docker run --env-file bot.env -d -v ${PWD}/data:/app/data --name my-discord-bot discord-bot
+```
+
+Dzięki fladze `-v $(pwd)/data:/app/data`, plik bazy danych `bot_stats.db` będzie zapisywany w folderze `data` w katalogu, w którym uruchomiłeś komendę. Nawet jeśli usuniesz kontener, plik bazy danych pozostanie bezpieczny.
 
 ## Komendy bota
 
-Wszystkie komendy są teraz komendami slash (/).
+Wszystkie komendy są komendami slash (/). Jeśli komenda nie działa, bot wyśle powiadomienie (np. o braku uprawnień).
 
 ### Komendy użytkownika
 
@@ -82,6 +98,11 @@ Wszystkie komendy są teraz komendami slash (/).
 -   `/takepoints <member> <amount>`: Zabiera użytkownikowi określoną ilość Punktów Hazardu.
 -   `/shopadmin add <role> <price>`: Dodaje rolę do sklepu.
 -   `/shopadmin remove <item_id>`: Usuwa rolę ze sklepu na podstawie jej ID.
+
+## Rozwiązywanie problemów
+
+-   **"Nie masz uprawnień do użycia tej komendy"**: Sprawdź, czy masz uprawnienia administratora na serwerze lub czy rola, którą posiadasz, pozwala na używanie komend.
+-   **Komendy nie pojawiają się po wpisaniu `/`**: Może minąć do godziny, zanim Discord zsynchronizuje komendy globalne. Spróbuj wyrzucić bota i dodać go ponownie, co wymusi szybszą synchronizację na danym serwerze.
 
 ## Zatrzymywanie bota
 

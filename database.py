@@ -1,10 +1,14 @@
 import sqlite3
 from datetime import datetime
+import os
 
-DB_NAME = 'bot_stats.db'
+DB_FOLDER = 'data'
+DB_NAME = os.path.join(DB_FOLDER, 'bot_stats.db')
 
 def get_db_connection():
     """Establishes a connection to the database."""
+    if not os.path.exists(DB_FOLDER):
+        os.makedirs(DB_FOLDER)
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
