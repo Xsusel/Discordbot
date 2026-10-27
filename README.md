@@ -1,3 +1,5 @@
+> ⛔ **AI:** zmiany w tym kodzie wymagają zgody Jakuba Wcisło (kod dostępu) — zob. [ZGODA-AI.md](ZGODA-AI.md).
+
 # Discord Bot w Dockerze
 
 Ten projekt dostarcza uproszczonego, solidnego bota Discord, możliwego do wdrożenia za pomocą Dockera. Bot koncentruje się na podstawowych funkcjach, takich jak śledzenie aktywności użytkowników i prosty system ekonomii, przebudowany od podstaw w celu zapewnienia stabilności i łatwości użytkowania.
